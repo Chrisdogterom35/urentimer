@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Urentimer">
+<title>Urentimer</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;background:#000;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;color:#fff;overscroll-behavior:none;}
+  body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height:100vh;min-height:-webkit-fill-available;}
+
+  .status-bar{padding:env(safe-area-inset-top,14px) 20px 8px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;flex-shrink:0;background:#000;}
+
+  .tabs{display:flex;background:#1c1c1e;margin:0 16px 12px;border-radius:12px;padding:2px;gap:2px;flex-shrink:0;}
+  .tab{flex:1;padding:8px 0;text-align:center;font-size:13px;color:#8e8e93;border-radius:10px;cursor:pointer;font-weight:500;transition:background 0.15s,color 0.15s;}
+  .tab.active{background:#3a3a3c;color:#fff;}
+
+  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px env(safe-area-inset-bottom,20px);}
+  .pg{display:none;}
+  .pg.show{display:block;}
+
+  .card{background:#1c1c1e;border-radius:16px;padding:16px;margin-bottom:12px;border:0.5px solid #2c2c2e;}
+  .lbl{color:#8e8e93;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}
+  .big{color:#fff;font-size:52px;font-weight:200;letter-spacing:-2px;font-variant-numeric:tabular-nums;line-height:1;}
+  .earn{color:#30d158;font-size:28px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-0.5px;}
+  .earn-lbl{color:#8e8e93;font-size:13px;margin-bottom:3px;}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .mini{background:#1c1c1e;border-radius:14px;padding:13px;border:0.5px solid #2c2c2e;}
+  .mini-val{color:#fff;font-size:17px;font-weight:500;}
+  .mini-lbl{color:#8e8e93;font-size:11px;margin-top:3px;}
+
+  .btn-row{display:flex;gap:10px;margin-bottom:12px;}
+  .btn-g{flex:1;padding:16px;background:#30d158;color:#000;border:none;border-radius:14px;font-size:17px;font-weight:600;cursor:pointer;}
+  .btn-r{flex:1;padding:16px;background:#ff3b30;color:#fff;border:none;border-radius:14px;font-size:17px;font-weight:600;cursor:pointer;}
+  .btn-gray{padding:16px 18px;background:#3a3a3c;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:500;cursor:pointer;}
+  .btn-blue{width:100%;padding:14px;background:#0a84ff;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:6px;}
+  .btn-save-day{width:100%;padding:14px;background:#30d158;color:#000;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;}
+
+  input[type=date],input[type=time],input[type=number]{width:100%;padding:12px 14px;background:#2c2c2e;border:0.5px solid #3a3a3c;border-radius:12px;color:#fff;font-size:16px;margin-bottom:10px;outline:none;-webkit-appearance:none;appearance:none;}
+  input:focus{border-color:#30d158;}
+  .inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .inp-row input{margin-bottom:0;}
+
+  .dot{width:7px;height:7px;border-radius:50%;background:#30d158;display:inline-block;margin-right:5px;animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .tgl-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .tgl{width:48px;height:28px;border-radius:14px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
+  .tgl.on{background:#30d158;}.tgl.off{background:#3a3a3c;}
+  .tgl-t{width:24px;height:24px;background:#fff;border-radius:50%;position:absolute;top:2px;transition:left 0.2s;}
+  .tgl.on .tgl-t{left:22px;}.tgl.off .tgl-t{left:2px;}
+  .tgl-lbl{color:#8e8e93;font-size:14px;}
+
+  .sec-title{color:#fff;font-size:20px;font-weight:600;margin-bottom:14px;letter-spacing:-0.3px;}
+
+  .month-card{background:#1c1c1e;border-radius:16px;padding:15px;margin-bottom:10px;border:0.5px solid #2c2c2e;}
+  .month-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .month-name{color:#fff;font-size:16px;font-weight:500;}
+  .month-earn{color:#30d158;font-size:16px;font-weight:500;}
+  .month-sub{display:flex;gap:14px;margin-top:6px;}
+  .month-sub span{color:#8e8e93;font-size:13px;}
+  .month-days{margin-top:12px;display:none;}
+  .month-days.open{display:block;}
+
+  .day-item{padding:10px 0;border-bottom:0.5px solid #2c2c2e;}
+  .day-item:last-child{border-bottom:none;}
+  .day-view{display:flex;justify-content:space-between;align-items:center;}
+  .day-edit-panel{display:none;margin-top:10px;background:#2c2c2e;border-radius:12px;padding:12px;}
+  .day-edit-panel.open{display:block;}
+  .day-edit-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+  .day-edit-row input{margin-bottom:0;}
+  .edit-inp{background:#1c1c1e;border:0.5px solid #3a3a3c;border-radius:10px;color:#fff;font-size:14px;padding:10px;outline:none;width:100%;}
+  .edit-inp:focus{border-color:#30d158;}
+  .edit-btns{display:flex;gap:8px;margin-top:8px;}
+  .save-btn{flex:1;padding:10px;background:#30d158;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;}
+  .cancel-btn{padding:10px 14px;background:#3a3a3c;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;}
+  .del-btn{padding:10px 14px;background:#3a1010;color:#ff453a;border:0.5px solid #5a1a1a;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;}
+  .edit-btn{background:none;border:none;color:#0a84ff;font-size:12px;cursor:pointer;padding:2px 8px;font-weight:500;}
+
+  .s-lbl{color:#8e8e93;font-size:13px;}
+  .s-val{color:#fff;font-size:14px;font-weight:500;}
+  .s-earn{color:#30d158;font-size:14px;font-weight:500;}
+
+  .banner{border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+  .banner.green{background:#0a2a1a;border:0.5px solid #1a5a30;}
+  .banner-dot{width:8px;height:8px;border-radius:50%;background:#30d158;flex-shrink:0;animation:pulse 1.4s infinite;}
+  .banner-txt{color:#30d158;font-size:13px;font-weight:500;}
+
+  .time-row{display:flex;align-items:center;gap:10px;margin-bottom:0;}
+  .time-inp{background:#2c2c2e;border:0.5px solid #3a3a3c;border-radius:12px;color:#fff;font-size:16px;padding:12px 14px;outline:none;flex:1;}
+  .time-inp:focus{border-color:#30d158;}
+  .apply-btn{padding:12px 16px;background:#0a84ff;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;}
+  .hint{color:#8e8e93;font-size:12px;margin-top:8px;}
+  .preview-txt{color:#8e8e93;font-size:13px;margin-top:10px;}
+  .edit-preview{color:#8e8e93;font-size:12px;margin:6px 0 2px;}
+
+  .breakdown{background:#0d1f0d;border:0.5px solid #1a3d1a;border-radius:12px;padding:12px;margin-top:10px;}
+  .brow{display:flex;justify-content:space-between;padding:4px 0;}
+  .brow-lbl{color:#6e8e6e;font-size:13px;}
+  .brow-val{color:#9ed89e;font-size:13px;font-variant-numeric:tabular-nums;}
+  .brow.total .brow-lbl,.brow.total .brow-val{color:#30d158;font-weight:600;}
+  .brow.neg .brow-val{color:#ff6b6b;}
+  .brow.neg .brow-lbl{color:#8e6e6e;}
+
+  .save-flash{color:#30d158;font-size:11px;opacity:0;transition:opacity 0.3s;}
+</style>
+</head>
+<body>
+
+<div class="status-bar">
+  <span id="clk">9:41</span>
+  <span id="save-dot" class="save-flash">opgeslagen</span>
+  <span>●●●●</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(0)">Timer</div>
+  <div class="tab" onclick="showTab(1)">Invoegen</div>
+  <div class="tab" onclick="showTab(2)">Maanden</div>
+</div>
+
+<div class="content">
+
+  <!-- TAB 0: TIMER -->
+  <div class="pg show" id="tab0">
+    <div id="auto-banner" style="display:none;" class="banner green">
+      <div class="banner-dot"></div>
+      <div class="banner-txt" id="auto-banner-txt">Automatisch gestart</div>
+    </div>
+    <div id="saved-banner" style="display:none;" class="banner green">
+      <div style="width:8px;height:8px;border-radius:50%;background:#30d158;flex-shrink:0;"></div>
+      <div class="banner-txt" id="saved-banner-txt">Dag opgeslagen</div>
+    </div>
+
+    <div class="card">
+      <div class="lbl" id="timer-lbl">Gewerkte tijd vandaag</div>
+      <div class="big" id="timer-display">00:00:00</div>
+      <div style="margin-top:12px;">
+        <div class="earn-lbl" id="earn-lbl">Verdiend (bruto)</div>
+        <div class="earn" id="earn-display">€0,00</div>
+      </div>
+      <div id="live-breakdown" style="display:none;" class="breakdown">
+        <div class="brow"><span class="brow-lbl">Salaris</span><span class="brow-val" id="bd-sal">€0,00</span></div>
+        <div class="brow"><span class="brow-lbl">+ Vakantie-uren (9,625%)</span><span class="brow-val" id="bd-vak">€0,00</span></div>
+        <div class="brow"><span class="brow-lbl">+ Vakantiegeld (8,77%)</span><span class="brow-val" id="bd-vg">€0,00</span></div>
+        <div class="brow neg"><span class="brow-lbl">− WGA (0,355%)</span><span class="brow-val" id="bd-wga">€0,00</span></div>
+        <div class="brow total" style="border-top:0.5px solid #1a3d1a;margin-top:4px;padding-top:6px;"><span class="brow-lbl">Netto</span><span class="brow-val" id="bd-netto">€0,00</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="lbl">Starttijd vandaag</div>
+      <div class="time-row">
+        <input type="time" class="time-inp" id="start-inp">
+        <button class="apply-btn" onclick="applyStart()">Toepassen</button>
+      </div>
+      <div id="start-hint" class="hint">Vul in hoe laat je begon</div>
+    </div>
+
+    <div class="tgl-row">
+      <div class="tgl on" id="mode-tgl" onclick="toggleMode()"><div class="tgl-t"></div></div>
+      <span class="tgl-lbl" id="mode-lbl">Bruto weergave</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-g" id="main-btn" onclick="toggleTimer()">Start</button>
+      <button class="btn-gray" onclick="resetToday()">Reset</button>
+    </div>
+
+    <div id="save-day-wrap" style="display:none;">
+      <button class="btn-save-day" onclick="saveDayToMonth()">Dag opslaan in maandoverzicht</button>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="lbl">Sessies vandaag</div>
+      <div id="today-list"><div style="color:#5c5c60;font-size:14px;text-align:center;padding:6px 0;">Nog geen sessies</div></div>
+    </div>
+  </div>
+
+  <!-- TAB 1: INVOEGEN -->
+  <div class="pg" id="tab1">
+    <div class="sec-title">Dag toevoegen</div>
+    <div class="card">
+      <div class="lbl">Datum</div>
+      <input type="date" id="add-date">
+      <div class="lbl" style="margin-top:4px;">Tijden</div>
+      <div class="inp-row">
+        <input type="time" id="add-start">
+        <input type="time" id="add-end">
+      </div>
+      <div class="preview-txt" id="add-preview">Vul start- en eindtijd in</div>
+      <button class="btn-blue" onclick="addByTime()">Toevoegen</button>
+    </div>
+    <div class="card">
+      <div class="lbl">Of op uren</div>
+      <input type="number" id="add-hrs" placeholder="Uren (bv. 7.5)" step="0.25" min="0.25" max="24">
+      <input type="date" id="add-hrs-date">
+      <button class="btn-blue" onclick="addByHours()" style="margin-top:0;">Toevoegen op uren</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: MAANDEN -->
+  <div class="pg" id="tab2">
+    <div class="sec-title">Maandoverzicht</div>
+    <div class="row2">
+      <div class="mini"><div class="mini-val" id="gs-days">0</div><div class="mini-lbl">Totaal dagen</div></div>
+      <div class="mini"><div class="mini-val" id="gs-hrs">0u</div><div class="mini-lbl">Totaal uren</div></div>
+      <div class="mini"><div class="mini-val" id="gs-bruto" style="color:#30d158;">€0</div><div class="mini-lbl">Bruto (incl. vakantie)</div></div>
+      <div class="mini"><div class="mini-val" id="gs-netto" style="color:#ff9f0a;">€0</div><div class="mini-lbl">Netto uitbetaald</div></div>
+    </div>
+    <div id="months-list"><div style="color:#5c5c60;font-size:14px;text-align:center;padding:14px 0;">Voeg dagen toe om hier te zien</div></div>
+  </div>
+
+</div>
+
+<script>
+const UURLOON=15.74,VAK_PCT=3.85/40,VG_PCT=55.22/629.60,WGA_PCT=0.00355;
+function calcLoon(u){const s=u*UURLOON,vak=s*VAK_PCT,vg=s*VG_PCT,br=s+vak+vg,wga=br*WGA_PCT;return{sal:s,vakUren:vak,vakGeld:vg,brutoTotaal:br,wga,netto:br-wga};}
+
+let running=false,startTs=null,manualOffset=0,interval=null,showNetto=false;
+let todaySessions=[],allDays=[],autoStartTime=null,openEditIdx=null,saveTmr=null,savedTmr=null;
+
+const todayStr=()=>new Date().toISOString().split('T')[0];
+function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;return[h,m,sc].map(v=>String(v).padStart(2,'0')).join(':');}
+function euro(v){return'€'+v.toFixed(2).replace('.',',');}
+function totalElapsed(){return manualOffset+(running?Math.floor((Date.now()-startTs)/1000):0);}
+
+function persistTimer(){
+  try{
+    if(running&&startTs){
+      localStorage.setItem('urentimer_running','1');
+      localStorage.setItem('urentimer_startTs',String(startTs));
+      localStorage.setItem('urentimer_offset',String(manualOffset));
+      localStorage.setItem('urentimer_autoStart',autoStartTime||'');
+      localStorage.setItem('urentimer_sessions',JSON.stringify(todaySessions));
+      localStorage.setItem('urentimer_timerDate',todayStr());
+    } else {
+      localStorage.removeItem('urentimer_running');
+      localStorage.removeItem('urentimer_startTs');
+      localStorage.setItem('urentimer_offset',String(manualOffset));
+      localStorage.setItem('urentimer_autoStart',autoStartTime||'');
+      localStorage.setItem('urentimer_sessions',JSON.stringify(todaySessions));
+      localStorage.setItem('urentimer_timerDate',todayStr());
+    }
+  }catch(e){}
+}
+
+function persist(){
+  try{
+    localStorage.setItem('urentimer_days',JSON.stringify(allDays));
+    localStorage.setItem('urentimer_netto',showNetto?'1':'0');
+    const dot=document.getElementById('save-dot');
+    dot.style.opacity='1';
+    clearTimeout(saveTmr);
+    saveTmr=setTimeout(()=>dot.style.opacity='0',1500);
+  }catch(e){}
+}
+
+function load(){
+  try{
+    const d=localStorage.getItem('urentimer_days');
+    if(d)allDays=JSON.parse(d);
+    if(localStorage.getItem('urentimer_netto')==='1'){
+      showNetto=true;
+      document.getElementById('mode-tgl').className='tgl off';
+      document.getElementById('mode-lbl').textContent='Netto weergave';
+    }
+    const savedDate=localStorage.getItem('urentimer_timerDate');
+    const isToday=savedDate===todayStr();
+    if(isToday){
+      const wasRunning=localStorage.getItem('urentimer_running')==='1';
+      const savedOffset=parseFloat(localStorage.getItem('urentimer_offset')||'0');
+      const savedStartTs=parseInt(localStorage.getItem('urentimer_startTs')||'0');
+      const savedAutoStart=localStorage.getItem('urentimer_autoStart')||null;
+      const savedSessions=localStorage.getItem('urentimer_sessions');
+      if(savedSessions)todaySessions=JSON.parse(savedSessions);
+      autoStartTime=savedAutoStart||null;
+      if(wasRunning&&savedStartTs){
+        manualOffset=savedOffset;
+        startTs=savedStartTs;
+        running=true;
+        interval=setInterval(()=>{updateTimer();persistTimer();},1000);
+        document.getElementById('main-btn').textContent='Stop';
+        document.getElementById('main-btn').className='btn-r';
+        document.getElementById('timer-lbl').innerHTML='<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:500;">Live</span>';
+        if(autoStartTime){
+          document.getElementById('auto-banner').style.display='flex';
+          document.getElementById('auto-banner-txt').textContent='Loopt sinds '+autoStartTime;
+          document.getElementById('start-inp').value=autoStartTime;
+          document.getElementById('start-hint').textContent='Gestart om '+autoStartTime;
+        }
+        updateTimer();
+      } else if(savedOffset>0){
+        manualOffset=savedOffset;
+        updateTimer();
+        if(manualOffset>60)document.getElementById('save-day-wrap').style.display='block';
+      }
+      renderTodaySessions();
+    }
+  }catch(e){}
+}
+
+function updateTimer(){
+  const t=totalElapsed(),l=calcLoon(t/3600);
+  document.getElementById('timer-display').textContent=fmt(t);
+  document.getElementById('earn-display').textContent=euro(showNetto?l.netto:l.brutoTotaal);
+  document.getElementById('earn-lbl').textContent=showNetto?'Verdiend (netto)':'Verdiend (bruto incl. vakantie)';
+  if(t>0){
+    document.getElementById('live-breakdown').style.display='block';
+    document.getElementById('bd-sal').textContent=euro(l.sal);
+    document.getElementById('bd-vak').textContent=euro(l.vakUren);
+    document.getElementById('bd-vg').textContent=euro(l.vakGeld);
+    document.getElementById('bd-wga').textContent='-'+euro(l.wga);
+    document.getElementById('bd-netto').textContent=euro(l.netto);
+  }
+}
+
+function applyStart(){
+  const val=document.getElementById('start-inp').value;
+  if(!val){alert('Vul een starttijd in.');return;}
+  const[h,m]=val.split(':').map(Number);
+  const now=new Date();
+  const st=new Date(now.getFullYear(),now.getMonth(),now.getDate(),h,m,0);
+  const diff=Math.floor((now-st)/1000);
+  if(diff<=0){alert('Starttijd moet in het verleden liggen.');return;}
+  if(running){clearInterval(interval);running=false;}
+  manualOffset=diff;startTs=Date.now();running=true;
+  interval=setInterval(()=>{updateTimer();persistTimer();},1000);
+  autoStartTime=val;
+  const banner=document.getElementById('auto-banner');
+  banner.style.display='flex';
+  document.getElementById('auto-banner-txt').textContent='Loopt sinds '+val+' ('+fmt(diff)+' geleden)';
+  document.getElementById('main-btn').textContent='Stop';
+  document.getElementById('main-btn').className='btn-r';
+  document.getElementById('timer-lbl').innerHTML='<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:500;">Live</span>';
+  document.getElementById('start-hint').textContent='Gestart om '+val;
+  todaySessions=[{time:val}];
+  document.getElementById('save-day-wrap').style.display='none';
+  document.getElementById('saved-banner').style.display='none';
+  renderTodaySessions();updateTimer();
+}
+
+function toggleTimer(){
+  if(!running){
+    startTs=Date.now();running=true;
+    interval=setInterval(()=>{updateTimer();persistTimer();},1000);
+    document.getElementById('main-btn').textContent='Stop';
+    document.getElementById('main-btn').className='btn-r';
+    document.getElementById('timer-lbl').innerHTML='<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:500;">Live</span>';
+    const now=new Date();
+    todaySessions.push({time:now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')});
+    document.getElementById('save-day-wrap').style.display='none';
+  } else {
+    manualOffset+=Math.floor((Date.now()-startTs)/1000);
+    clearInterval(interval);running=false;
+    persistTimer();
+    updateTimer();renderTodaySessions();
+    document.getElementById('main-btn').textContent='Start';
+    document.getElementById('main-btn').className='btn-g';
+    document.getElementById('timer-lbl').textContent='Gewerkte tijd vandaag';
+    document.getElementById('auto-banner').style.display='none';
+    if(totalElapsed()>60)document.getElementById('save-day-wrap').style.display='block';
+  }
+}
+
+function saveDayToMonth(){
+  const t=totalElapsed();if(t<60){alert('Nog geen tijd.');return;}
+  const d=todayStr();
+  const now=new Date();
+  const endTime=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  const label=autoStartTime?autoStartTime+' – '+endTime:fmt(t)+' gewerkt';
+  allDays=allDays.filter(x=>x.date!==d);
+  allDays.push({date:d,startTime:autoStartTime||null,endTime,hours:t/3600,label,type:autoStartTime?'time':'hours'});
+  persist();
+  document.getElementById('save-day-wrap').style.display='none';
+  const l=calcLoon(t/3600);
+  document.getElementById('saved-banner-txt').textContent='Opgeslagen: '+label+' · '+euro(l.netto)+' netto';
+  const sb=document.getElementById('saved-banner');
+  sb.style.display='flex';
+  clearTimeout(savedTmr);savedTmr=setTimeout(()=>sb.style.display='none',4000);
+}
+
+function resetToday(){
+  if(running){clearInterval(interval);running=false;}
+  manualOffset=0;startTs=null;todaySessions=[];autoStartTime=null;
+  try{['urentimer_running','urentimer_startTs','urentimer_offset','urentimer_autoStart','urentimer_sessions','urentimer_timerDate'].forEach(k=>localStorage.removeItem(k));}catch(e){}
+  document.getElementById('timer-display').textContent='00:00:00';
+  document.getElementById('earn-display').textContent='€0,00';
+  document.getElementById('earn-lbl').textContent='Verdiend (bruto)';
+  document.getElementById('live-breakdown').style.display='none';
+  document.getElementById('main-btn').textContent='Start';
+  document.getElementById('main-btn').className='btn-g';
+  document.getElementById('timer-lbl').textContent='Gewerkte tijd vandaag';
+  document.getElementById('auto-banner').style.display='none';
+  document.getElementById('save-day-wrap').style.display='none';
+  document.getElementById('saved-banner').style.display='none';
+  document.getElementById('start-inp').value='';
+  document.getElementById('start-hint').textContent='Vul in hoe laat je begon';
+  renderTodaySessions();
+}
+
+function renderTodaySessions(){
+  const el=document.getElementById('today-list');
+  if(!todaySessions.length){el.innerHTML='<div style="color:#5c5c60;font-size:14px;text-align:center;padding:6px 0;">Nog geen sessies</div>';return;}
+  const t=totalElapsed(),l=calcLoon(t/3600);
+  el.innerHTML=todaySessions.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid #2c2c2e;">
+    <span class="s-lbl">${s.time}</span><span class="s-val">${fmt(t)}</span><span class="s-earn">${euro(showNetto?l.netto:l.brutoTotaal)}</span>
+  </div>`).join('');
+}
+
+function toggleMode(){
+  showNetto=!showNetto;
+  document.getElementById('mode-tgl').className='tgl '+(showNetto?'off':'on');
+  document.getElementById('mode-lbl').textContent=showNetto?'Netto weergave':'Bruto weergave';
+  updateTimer();persist();
+}
+
+const MN=['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+function mKey(d){const[y,m]=d.split('-');return y+'-'+m;}
+function mLabel(k){const[y,m]=k.split('-');return MN[parseInt(m)-1]+' '+y;}
+
+function renderMonths(){
+  const grouped={};
+  allDays.forEach((d,i)=>{const k=mKey(d.date);if(!grouped[k])grouped[k]=[];grouped[k].push({...d,_idx:i});});
+  const keys=Object.keys(grouped).sort().reverse();
+  const totalH=allDays.reduce((a,d)=>a+d.hours,0);
+  const tl=calcLoon(totalH);
+  document.getElementById('gs-days').textContent=allDays.length;
+  document.getElementById('gs-hrs').textContent=totalH.toFixed(1)+'u';
+  document.getElementById('gs-bruto').textContent=euro(tl.brutoTotaal);
+  document.getElementById('gs-netto').textContent=euro(tl.netto);
+
+  const el=document.getElementById('months-list');
+  if(!keys.length){el.innerHTML='<div style="color:#5c5c60;font-size:14px;text-align:center;padding:14px 0;">Voeg dagen toe om hier te zien</div>';return;}
+
+  const openMonths=new Set();
+  document.querySelectorAll('.month-days.open').forEach(e=>openMonths.add(e.id.replace('m-','')));
+
+  el.innerHTML=keys.map(k=>{
+    const days=grouped[k];
+    const hrs=days.reduce((a,d)=>a+d.hours,0);
+    const kl=calcLoon(hrs);
+    const isOpen=openMonths.has(k);
+
+    const daysHtml=days.sort((a,b)=>b.date.localeCompare(a.date)).map(d=>{
+      const[y,mo,day]=d.date.split('-');
+      const dl=calcLoon(d.hours);
+      const idx=d._idx;
+      const isEditOpen=openEditIdx===idx;
+
+      const editPanel=`<div class="day-edit-panel ${isEditOpen?'open':''}" id="ep${idx}">
+        <div style="color:#8e8e93;font-size:12px;margin-bottom:6px;">Datum</div>
+        <input type="date" class="edit-inp" id="edate${idx}" value="${d.date}" style="margin-bottom:10px;width:100%;">
+        ${d.type==='hours'?`
+          <div style="color:#8e8e93;font-size:12px;margin-bottom:6px;">Uren</div>
+          <input type="number" class="edit-inp" id="ehrs${idx}" value="${d.hours.toFixed(2)}" step="0.25" min="0.25" max="24" style="width:100%;">
+        `:`
+          <div class="day-edit-row">
+            <div><div style="color:#8e8e93;font-size:12px;margin-bottom:4px;">Start</div><input type="time" class="edit-inp" id="estart${idx}" value="${d.startTime||''}"></div>
+            <div><div style="color:#8e8e93;font-size:12px;margin-bottom:4px;">Eind</div><input type="time" class="edit-inp" id="eend${idx}" value="${d.endTime||''}"></div>
+          </div>
+          <div class="edit-preview" id="eprev${idx}">${d.label}</div>
+        `}
+        <div class="edit-btns">
+          <button class="save-btn" onclick="doSave(${idx})">Opslaan</button>
+          <button class="cancel-btn" onclick="doCancel()">Annuleer</button>
+          <button class="del-btn" onclick="doDelete(${idx})">Verwijder</button>
+        </div>
+      </div>`;
+
+      return`<div class="day-item">
+        <div class="day-view">
+          <div>
+            <div class="s-val">${day}-${mo}-${y}</div>
+            <div class="s-lbl">${d.label} · ${d.hours.toFixed(2)}u</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="text-align:right;">
+              <div class="s-earn">${euro(dl.brutoTotaal)}</div>
+              <div style="color:#ff9f0a;font-size:12px;">${euro(dl.netto)} netto</div>
+            </div>
+            <button class="edit-btn" onclick="doToggleEdit(${idx})">bewerk</button>
+          </div>
+        </div>
+        ${editPanel}
+      </div>`;
+    }).join('');
+
+    return`<div class="month-card">
+      <div class="month-hdr" onclick="toggleMonth('${k}')">
+        <span class="month-name">${mLabel(k)}</span>
+        <div style="text-align:right;">
+          <div class="month-earn">${euro(kl.brutoTotaal)}</div>
+          <div style="color:#ff9f0a;font-size:13px;">${euro(kl.netto)} netto</div>
+        </div>
+      </div>
+      <div class="month-sub">
+        <span>${days.length} dag${days.length!==1?'en':''}</span>
+        <span>${hrs.toFixed(1)} uur</span>
+        <span style="color:#6e8e6e;font-size:12px;">vak. ${euro(kl.vakUren+kl.vakGeld)} · wga -${euro(kl.wga)}</span>
+      </div>
+      <div class="month-days ${isOpen?'open':''}" id="m-${k}">${daysHtml}</div>
+    </div>`;
+  }).join('');
+
+  allDays.forEach((d,i)=>{
+    if(d.type==='time'){
+      const sEl=document.getElementById('estart'+i);
+      const eEl=document.getElementById('eend'+i);
+      if(sEl)sEl.addEventListener('input',()=>updatePreview(i));
+      if(eEl)eEl.addEventListener('input',()=>updatePreview(i));
+    }
+  });
+}
+
+function doToggleEdit(idx){openEditIdx=(openEditIdx===idx)?null:idx;renderMonths();}
+function doCancel(){openEditIdx=null;renderMonths();}
+
+function doSave(idx){
+  const d=allDays[idx];if(!d)return;
+  const nd=document.getElementById('edate'+idx)?.value;
+  if(nd)d.date=nd;
+  if(d.type==='hours'){
+    const h=parseFloat(document.getElementById('ehrs'+idx)?.value);
+    if(!isNaN(h)&&h>0){d.hours=h;d.label=h.toFixed(2)+' uur';}
+  } else {
+    const s=document.getElementById('estart'+idx)?.value;
+    const e=document.getElementById('eend'+idx)?.value;
+    if(s&&e){
+      const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
+      const mins=(eh*60+em)-(sh*60+sm);
+      if(mins>0){d.hours=mins/60;d.startTime=s;d.endTime=e;d.label=s+' – '+e;}
+    }
+  }
+  openEditIdx=null;persist();renderMonths();
+}
+
+function doDelete(idx){allDays.splice(idx,1);openEditIdx=null;persist();renderMonths();}
+
+function updatePreview(idx){
+  const d=allDays[idx];if(!d||d.type==='hours')return;
+  const s=document.getElementById('estart'+idx)?.value;
+  const e=document.getElementById('eend'+idx)?.value;
+  const p=document.getElementById('eprev'+idx);
+  if(!p||!s||!e){if(p)p.textContent='Vul tijden in';return;}
+  const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
+  const mins=(eh*60+em)-(sh*60+sm);
+  if(mins<=0){p.textContent='Eindtijd moet later zijn';return;}
+  const l=calcLoon(mins/60);
+  p.textContent=(mins/60).toFixed(2)+'u — bruto '+euro(l.brutoTotaal)+' / netto '+euro(l.netto);
+}
+
+function toggleMonth(k){document.getElementById('m-'+k)?.classList.toggle('open');}
+
+function addByTime(){
+  const date=document.getElementById('add-date').value;
+  const s=document.getElementById('add-start').value;
+  const e=document.getElementById('add-end').value;
+  if(!date||!s||!e){alert('Vul datum, start- en eindtijd in.');return;}
+  const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
+  const mins=(eh*60+em)-(sh*60+sm);
+  if(mins<=0){alert('Eindtijd moet na starttijd liggen.');return;}
+  allDays=allDays.filter(x=>x.date!==date);
+  allDays.push({date,startTime:s,endTime:e,hours:mins/60,label:s+' – '+e,type:'time'});
+  persist();showTab(2);
+}
+
+function addByHours(){
+  const h=parseFloat(document.getElementById('add-hrs').value);
+  const d=document.getElementById('add-hrs-date').value;
+  if(!d||isNaN(h)||h<=0){alert('Vul uren en datum in.');return;}
+  allDays=allDays.filter(x=>x.date!==d);
+  allDays.push({date:d,hours:h,label:h.toFixed(2)+' uur',type:'hours'});
+  persist();showTab(2);
+}
+
+document.getElementById('add-start').addEventListener('input',updateAddPreview);
+document.getElementById('add-end').addEventListener('input',updateAddPreview);
+function updateAddPreview(){
+  const s=document.getElementById('add-start').value,e=document.getElementById('add-end').value;
+  const el=document.getElementById('add-preview');
+  if(!s||!e){el.textContent='Vul start- en eindtijd in';return;}
+  const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
+  const mins=(eh*60+em)-(sh*60+sm);
+  if(mins<=0){el.textContent='Eindtijd moet later zijn';return;}
+  const l=calcLoon(mins/60);
+  el.textContent=(mins/60).toFixed(2)+'u — bruto '+euro(l.brutoTotaal)+' / netto '+euro(l.netto);
+}
+
+function showTab(i){
+  document.querySelectorAll('.pg').forEach((p,j)=>p.classList.toggle('show',i===j));
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
+  if(i===2)renderMonths();
+}
+
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clk').textContent=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');
+}
+updateClock();setInterval(updateClock,15000);
+
+const td=todayStr();
+document.getElementById('add-date').value=td;
+document.getElementById('add-hrs-date').value=td;
+load();
+</script>
+</body>
+</html>
