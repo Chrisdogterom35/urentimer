@@ -603,6 +603,67 @@ function updateClock(){
 }
 updateClock();setInterval(updateClock,15000);
 
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    if(running&&startTs){
+      clearInterval(interval);
+      interval=setInterval(()=>{updateTimer();persistTimer();},1000);
+      updateTimer();
+    } else {
+      const wasRunning=localStorage.getItem('urentimer_running')==='1';
+      const savedDate=localStorage.getItem('urentimer_timerDate');
+      if(wasRunning&&savedDate===todayStr()){
+        const savedStartTs=parseInt(localStorage.getItem('urentimer_startTs')||'0');
+        const savedOffset=parseFloat(localStorage.getItem('urentimer_offset')||'0');
+        if(savedStartTs){
+          startTs=savedStartTs;
+          manualOffset=savedOffset;
+          running=true;
+          clearInterval(interval);
+          interval=setInterval(()=>{updateTimer();persistTimer();},1000);
+          updateTimer();
+        }
+      }
+    }
+  } else {
+    persistTimer();
+  }
+});
+
+window.addEventListener('focus',()=>{
+  if(running&&startTs){
+    clearInterval(interval);
+    interval=setInterval(()=>{updateTimer();persistTimer();},1000);
+    updateTimer();
+  }
+});
+
+window.addEventListener('pageshow',(e)=>{
+  const wasRunning=localStorage.getItem('urentimer_running')==='1';
+  const savedDate=localStorage.getItem('urentimer_timerDate');
+  if(wasRunning&&savedDate===todayStr()){
+    const savedStartTs=parseInt(localStorage.getItem('urentimer_startTs')||'0');
+    const savedOffset=parseFloat(localStorage.getItem('urentimer_offset')||'0');
+    if(savedStartTs&&!running){
+      startTs=savedStartTs;
+      manualOffset=savedOffset;
+      running=true;
+      const savedAutoStart=localStorage.getItem('urentimer_autoStart')||null;
+      autoStartTime=savedAutoStart||null;
+      clearInterval(interval);
+      interval=setInterval(()=>{updateTimer();persistTimer();},1000);
+      document.getElementById('main-btn').textContent='Stop';
+      document.getElementById('main-btn').className='btn-r';
+      document.getElementById('timer-lbl').innerHTML='<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:500;">Live</span>';
+      if(autoStartTime){
+        document.getElementById('auto-banner').style.display='flex';
+        document.getElementById('auto-banner-txt').textContent='Loopt sinds '+autoStartTime;
+      }
+      updateTimer();
+    }
+  }
+});
+
 const td=todayStr();
 document.getElementById('add-date').value=td;
 document.getElementById('add-hrs-date').value=td;
