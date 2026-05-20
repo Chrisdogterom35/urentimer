@@ -432,8 +432,8 @@ input:focus{border-color:rgba(48,209,88,0.5);background:rgba(255,255,255,0.08);}
     </div>
 
     <div class="tgl-row">
-      <div class="tgl on" id="mode-tgl" onclick="toggleMode()"><div class="tgl-t"></div></div>
-      <span class="tgl-lbl" id="mode-lbl">Bruto weergave</span>
+      <div class="tgl off" id="mode-tgl" onclick="toggleMode()"><div class="tgl-t"></div></div>
+      <span class="tgl-lbl" id="mode-lbl">Netto weergave</span>
     </div>
 
     <div class="btn-row">
@@ -577,7 +577,7 @@ function calcLoon(u) {
 }
 
 // --- State ---
-let running=false, startTs=null, manualOffset=0, interval=null, showNetto=false;
+let running=false, startTs=null, manualOffset=0, interval=null, showNetto=true;
 let todaySessions=[], allDays=[], autoStartTime=null, openEditIdx=null, saveTmr=null, savedTmr=null;
 
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -660,10 +660,10 @@ function load() {
     const d = localStorage.getItem('ut_days');
     if (d) allDays = JSON.parse(d);
 
-    if (localStorage.getItem('ut_netto') === '1') {
-      showNetto = true;
-      document.getElementById('mode-tgl').className = 'tgl off';
-      document.getElementById('mode-lbl').textContent = 'Netto weergave';
+    if (localStorage.getItem('ut_netto') === '0') {
+      showNetto = false;
+      document.getElementById('mode-tgl').className = 'tgl on';
+      document.getElementById('mode-lbl').textContent = 'Bruto weergave';
     }
 
     const savedDate = localStorage.getItem('ut_date');
