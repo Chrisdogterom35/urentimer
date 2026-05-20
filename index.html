@@ -148,6 +148,7 @@
         <div class="brow"><span class="brow-lbl">+ Vakantie-uren (9,625%)</span><span class="brow-val" id="bd-vak">€0,00</span></div>
         <div class="brow"><span class="brow-lbl">+ Vakantiegeld (8,77%)</span><span class="brow-val" id="bd-vg">€0,00</span></div>
         <div class="brow neg"><span class="brow-lbl">− WGA (0,355%)</span><span class="brow-val" id="bd-wga">€0,00</span></div>
+        <div class="brow neg"><span class="brow-lbl">− Loonheffing (~3,11%)</span><span class="brow-val" id="bd-lh">€0,00</span></div>
         <div class="brow total" style="border-top:0.5px solid #1a3d1a;margin-top:4px;padding-top:6px;"><span class="brow-lbl">Netto</span><span class="brow-val" id="bd-netto">€0,00</span></div>
       </div>
     </div>
@@ -218,8 +219,8 @@
 </div>
 
 <script>
-const UURLOON=15.74,VAK_PCT=3.85/40,VG_PCT=55.22/629.60,WGA_PCT=0.00355;
-function calcLoon(u){const s=u*UURLOON,vak=s*VAK_PCT,vg=s*VG_PCT,br=s+vak+vg,wga=br*WGA_PCT;return{sal:s,vakUren:vak,vakGeld:vg,brutoTotaal:br,wga,netto:br-wga};}
+const UURLOON=15.74,VAK_PCT=3.85/40,VG_PCT=55.22/629.60,WGA_PCT=0.00355,LH_PCT=64.42/2068.46;
+function calcLoon(u){const s=u*UURLOON,vak=s*VAK_PCT,vg=s*VG_PCT,br=s+vak+vg,wga=br*WGA_PCT,lh=br*LH_PCT;return{sal:s,vakUren:vak,vakGeld:vg,brutoTotaal:br,wga,lh,netto:br-wga-lh};}
 
 let running=false,startTs=null,manualOffset=0,interval=null,showNetto=false;
 let todaySessions=[],allDays=[],autoStartTime=null,openEditIdx=null,saveTmr=null,savedTmr=null;
@@ -315,6 +316,7 @@ function updateTimer(){
     document.getElementById('bd-vak').textContent=euro(l.vakUren);
     document.getElementById('bd-vg').textContent=euro(l.vakGeld);
     document.getElementById('bd-wga').textContent='-'+euro(l.wga);
+    document.getElementById('bd-lh').textContent='-'+euro(l.lh);
     document.getElementById('bd-netto').textContent=euro(l.netto);
   }
 }
