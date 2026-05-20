@@ -8,151 +8,379 @@
 <meta name="apple-mobile-web-app-title" content="Urentimer">
 <title>Urentimer</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;background:#000;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;color:#fff;overscroll-behavior:none;}
-  body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height:100vh;min-height:-webkit-fill-available;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
-  .status-bar{padding:env(safe-area-inset-top,14px) 20px 8px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;flex-shrink:0;background:#000;}
+html{background:#08081a;}
+body{
+  display:flex;flex-direction:column;
+  max-width:430px;margin:0 auto;
+  min-height:100vh;min-height:-webkit-fill-available;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
+  color:#fff;overscroll-behavior:none;
+  background:#08081a;
+  position:relative;
+}
+body::before{
+  content:'';position:fixed;top:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;height:100%;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(48,209,88,0.10) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 30% at 100% 100%, rgba(10,132,255,0.07) 0%, transparent 100%);
+}
 
-  .tabs{display:flex;background:#1c1c1e;margin:0 16px 12px;border-radius:12px;padding:2px;gap:2px;flex-shrink:0;}
-  .tab{flex:1;padding:8px 0;text-align:center;font-size:12px;color:#8e8e93;border-radius:10px;cursor:pointer;font-weight:500;transition:background 0.15s,color 0.15s;}
-  .tab.active{background:#3a3a3c;color:#fff;}
+/* ── Status bar ── */
+.status-bar{
+  padding:env(safe-area-inset-top,16px) 22px 10px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;font-weight:600;flex-shrink:0;
+  position:relative;z-index:1;
+  color:rgba(255,255,255,0.5);
+}
+#clk{color:#fff;font-size:15px;font-weight:600;}
 
-  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px env(safe-area-inset-bottom,20px);}
-  .pg{display:none;}
-  .pg.show{display:block;}
+/* ── Tabs ── */
+.tabs{
+  display:flex;
+  background:rgba(255,255,255,0.06);
+  margin:0 16px 16px;border-radius:16px;
+  padding:3px;gap:3px;flex-shrink:0;
+  border:1px solid rgba(255,255,255,0.07);
+  position:relative;z-index:1;
+}
+.tab{
+  flex:1;padding:7px 4px 6px;text-align:center;
+  font-size:10px;color:rgba(255,255,255,0.38);
+  border-radius:13px;cursor:pointer;font-weight:500;
+  transition:all 0.2s;line-height:1.2;
+  -webkit-user-select:none;user-select:none;
+}
+.tab-icon{display:block;font-size:16px;margin-bottom:2px;line-height:1;}
+.tab.active{
+  background:rgba(255,255,255,0.11);color:#fff;font-weight:600;
+  box-shadow:0 2px 10px rgba(0,0,0,0.35);
+}
 
-  .card{background:#1c1c1e;border-radius:16px;padding:16px;margin-bottom:12px;border:0.5px solid #2c2c2e;}
-  .lbl{color:#8e8e93;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}
-  .big{color:#fff;font-size:52px;font-weight:200;letter-spacing:-2px;font-variant-numeric:tabular-nums;line-height:1;}
-  .earn{color:#30d158;font-size:28px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-0.5px;}
-  .earn-lbl{color:#8e8e93;font-size:13px;margin-bottom:3px;}
+/* ── Content ── */
+.content{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:0 16px env(safe-area-inset-bottom,24px);
+  position:relative;z-index:1;
+}
+.pg{display:none;}
+.pg.show{display:block;}
 
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-  .mini{background:#1c1c1e;border-radius:14px;padding:13px;border:0.5px solid #2c2c2e;}
-  .mini-val{color:#fff;font-size:17px;font-weight:500;}
-  .mini-lbl{color:#8e8e93;font-size:11px;margin-top:3px;}
+/* ── Cards ── */
+.card{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.09);
+  border-radius:22px;padding:20px;margin-bottom:14px;
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+}
+.lbl{
+  color:rgba(255,255,255,0.4);font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;
+}
 
-  .btn-row{display:flex;gap:10px;margin-bottom:12px;}
-  .btn-g{flex:1;padding:16px;background:#30d158;color:#000;border:none;border-radius:14px;font-size:17px;font-weight:600;cursor:pointer;}
-  .btn-r{flex:1;padding:16px;background:#ff3b30;color:#fff;border:none;border-radius:14px;font-size:17px;font-weight:600;cursor:pointer;}
-  .btn-gray{padding:16px 18px;background:#3a3a3c;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:500;cursor:pointer;}
-  .btn-blue{width:100%;padding:14px;background:#0a84ff;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:6px;transition:background 0.2s;}
-  .btn-save-day{width:100%;padding:14px;background:#30d158;color:#000;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;}
-  .btn-danger{width:100%;padding:14px;background:#3a1010;color:#ff453a;border:0.5px solid #5a1a1a;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;}
-  .btn-export{padding:9px 14px;background:#2c2c2e;color:#0a84ff;border:0.5px solid #3a3a3c;border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;}
+/* ── Hero card (timer) ── */
+.hero-card{
+  background:linear-gradient(145deg, rgba(48,209,88,0.07) 0%, rgba(10,132,255,0.04) 100%);
+  border:1px solid rgba(48,209,88,0.14);
+  border-radius:26px;padding:28px 22px 22px;margin-bottom:14px;
+  position:relative;overflow:hidden;
+  transition:border-color 0.4s, box-shadow 0.4s;
+}
+.hero-card::after{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(circle, rgba(48,209,88,0.07) 0%, transparent 70%);
+  pointer-events:none;
+}
+.hero-card.running{
+  border-color:rgba(48,209,88,0.28);
+  box-shadow:0 0 50px rgba(48,209,88,0.07), 0 12px 40px rgba(0,0,0,0.4);
+}
+.hero-card.paused{
+  border-color:rgba(255,159,10,0.28);
+  box-shadow:0 0 50px rgba(255,159,10,0.06), 0 12px 40px rgba(0,0,0,0.4);
+}
 
-  input[type=date],input[type=time],input[type=number]{width:100%;padding:12px 14px;background:#2c2c2e;border:0.5px solid #3a3a3c;border-radius:12px;color:#fff;font-size:16px;margin-bottom:10px;outline:none;-webkit-appearance:none;appearance:none;}
-  input:focus{border-color:#30d158;}
-  .inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .inp-row input{margin-bottom:0;}
+.big{
+  font-size:62px;font-weight:200;letter-spacing:-3px;
+  font-variant-numeric:tabular-nums;line-height:1;
+  color:#fff;margin-bottom:4px;
+  transition:background 0.3s;
+}
+.big.running{
+  background:linear-gradient(135deg,#30d158 0%,#5ac8fa 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.big.paused{
+  background:linear-gradient(135deg,#ff9f0a 0%,#ffcc02 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
 
-  .dot{width:7px;height:7px;border-radius:50%;background:#30d158;display:inline-block;margin-right:5px;animation:pulse 1.4s infinite;}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.earn-lbl{color:rgba(255,255,255,0.38);font-size:13px;margin-bottom:4px;margin-top:14px;}
+.earn{
+  font-size:38px;font-weight:600;letter-spacing:-1.5px;
+  font-variant-numeric:tabular-nums;
+  background:linear-gradient(135deg,#30d158 0%,#4ade80 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
 
-  .tgl-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-  .tgl{width:48px;height:28px;border-radius:14px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
-  .tgl.on{background:#30d158;}.tgl.off{background:#3a3a3c;}
-  .tgl-t{width:24px;height:24px;background:#fff;border-radius:50%;position:absolute;top:2px;transition:left 0.2s;}
-  .tgl.on .tgl-t{left:22px;}.tgl.off .tgl-t{left:2px;}
-  .tgl-lbl{color:#8e8e93;font-size:14px;}
+/* ── Breakdown ── */
+.breakdown{
+  background:rgba(0,0,0,0.25);
+  border:1px solid rgba(48,209,88,0.12);
+  border-radius:16px;padding:14px;margin-top:16px;
+}
+.brow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;}
+.brow-lbl{color:rgba(255,255,255,0.4);font-size:13px;}
+.brow-val{color:rgba(255,255,255,0.65);font-size:13px;font-variant-numeric:tabular-nums;font-weight:500;}
+.brow.total{border-top:1px solid rgba(48,209,88,0.15);margin-top:6px;padding-top:10px;}
+.brow.total .brow-lbl{color:#30d158;font-weight:700;font-size:14px;}
+.brow.total .brow-val{
+  color:#30d158;font-weight:700;font-size:15px;
+  background:linear-gradient(135deg,#30d158,#5ac8fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.brow.neg .brow-val{color:rgba(255,107,107,0.85);}
+.brow.neg .brow-lbl{color:rgba(255,255,255,0.35);}
 
-  .sec-title{color:#fff;font-size:20px;font-weight:600;margin-bottom:14px;letter-spacing:-0.3px;}
+/* ── Banners ── */
+.banner{
+  border-radius:16px;padding:13px 16px;margin-bottom:14px;
+  display:flex;align-items:center;gap:11px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+}
+.banner.green{
+  background:rgba(48,209,88,0.1);
+  border:1px solid rgba(48,209,88,0.22);
+}
+.banner.orange{
+  background:rgba(255,159,10,0.1);
+  border:1px solid rgba(255,159,10,0.22);
+}
+.banner-dot{
+  width:8px;height:8px;border-radius:50%;background:#30d158;
+  flex-shrink:0;animation:pulse 1.4s infinite;
+}
+.banner-dot-o{width:8px;height:8px;border-radius:50%;background:#ff9f0a;flex-shrink:0;}
+.banner-txt{color:#30d158;font-size:13px;font-weight:600;}
+.banner-txt-o{color:#ff9f0a;font-size:13px;font-weight:600;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.85)}}
 
-  .month-card{background:#1c1c1e;border-radius:16px;padding:15px;margin-bottom:10px;border:0.5px solid #2c2c2e;}
-  .month-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
-  .month-name{color:#fff;font-size:16px;font-weight:500;}
-  .month-earn{color:#30d158;font-size:16px;font-weight:500;}
-  .month-sub{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;}
-  .month-sub span{color:#8e8e93;font-size:13px;}
-  .month-days{margin-top:12px;display:none;}
-  .month-days.open{display:block;}
+/* ── Month progress ── */
+.month-progress{
+  background:linear-gradient(135deg, rgba(10,132,255,0.12) 0%, rgba(94,200,250,0.06) 100%);
+  border:1px solid rgba(10,132,255,0.22);
+  border-radius:22px;padding:16px 20px;margin-bottom:14px;
+}
+.mp-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:5px;}
+.mp-lbl{color:rgba(90,200,250,0.7);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;}
+.mp-val{color:#5ac8fa;font-size:22px;font-weight:600;letter-spacing:-0.5px;}
+.mp-days{color:rgba(90,200,250,0.6);font-size:13px;}
+.mp-earn{
+  font-size:22px;font-weight:600;letter-spacing:-0.5px;
+  background:linear-gradient(135deg,#30d158,#5ac8fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
 
-  .day-item{padding:10px 0;border-bottom:0.5px solid #2c2c2e;}
-  .day-item:last-child{border-bottom:none;}
-  .day-view{display:flex;justify-content:space-between;align-items:center;}
-  .day-edit-panel{display:none;margin-top:10px;background:#2c2c2e;border-radius:12px;padding:12px;}
-  .day-edit-panel.open{display:block;}
-  .day-edit-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
-  .day-edit-row input{margin-bottom:0;}
-  .edit-inp{background:#1c1c1e;border:0.5px solid #3a3a3c;border-radius:10px;color:#fff;font-size:14px;padding:10px;outline:none;width:100%;}
-  .edit-inp:focus{border-color:#30d158;}
-  .edit-btns{display:flex;gap:8px;margin-top:8px;}
-  .save-btn{flex:1;padding:10px;background:#30d158;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;}
-  .cancel-btn{padding:10px 14px;background:#3a3a3c;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;}
-  .del-btn{padding:10px 14px;background:#3a1010;color:#ff453a;border:0.5px solid #5a1a1a;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;}
-  .edit-btn{background:none;border:none;color:#0a84ff;font-size:12px;cursor:pointer;padding:2px 8px;font-weight:500;}
+/* ── Mini stats grid ── */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.mini{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:18px;padding:15px;
+}
+.mini-val{color:#fff;font-size:18px;font-weight:600;letter-spacing:-0.3px;}
+.mini-lbl{color:rgba(255,255,255,0.38);font-size:11px;margin-top:4px;font-weight:500;}
 
-  .s-lbl{color:#8e8e93;font-size:13px;}
-  .s-val{color:#fff;font-size:14px;font-weight:500;}
-  .s-earn{color:#30d158;font-size:14px;font-weight:500;}
+/* ── Buttons ── */
+.btn-row{display:flex;gap:10px;margin-bottom:14px;}
+.btn-g{
+  flex:1;padding:17px;border:none;border-radius:18px;font-size:17px;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,#30d158 0%,#26b050 100%);color:#fff;
+  box-shadow:0 4px 20px rgba(48,209,88,0.3);
+  transition:transform 0.12s,box-shadow 0.12s;
+  text-shadow:0 1px 3px rgba(0,0,0,0.2);
+}
+.btn-g:active{transform:scale(0.96);box-shadow:0 2px 8px rgba(48,209,88,0.2);}
+.btn-r{
+  flex:1;padding:17px;border:none;border-radius:18px;font-size:17px;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,#ff3b30 0%,#cc2f26 100%);color:#fff;
+  box-shadow:0 4px 20px rgba(255,59,48,0.3);
+  transition:transform 0.12s,box-shadow 0.12s;
+}
+.btn-r:active{transform:scale(0.96);box-shadow:0 2px 8px rgba(255,59,48,0.2);}
+.btn-gray{
+  padding:17px 20px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);
+  border:1px solid rgba(255,255,255,0.1);border-radius:18px;font-size:15px;font-weight:600;cursor:pointer;
+  transition:transform 0.12s;
+}
+.btn-gray:active{transform:scale(0.96);}
+.btn-blue{
+  width:100%;padding:15px;border:none;border-radius:18px;font-size:16px;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,#0a84ff 0%,#0066cc 100%);color:#fff;
+  box-shadow:0 4px 20px rgba(10,132,255,0.3);
+  margin-top:8px;transition:transform 0.12s,background 0.2s;
+}
+.btn-blue:active{transform:scale(0.97);}
+.btn-save-day{
+  width:100%;padding:15px;border:none;border-radius:18px;font-size:16px;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,#30d158 0%,#26b050 100%);color:#fff;
+  box-shadow:0 4px 24px rgba(48,209,88,0.3);
+  margin-top:10px;transition:transform 0.12s;
+}
+.btn-save-day:active{transform:scale(0.97);}
+.btn-danger{
+  width:100%;padding:15px;border:1px solid rgba(255,69,58,0.3);border-radius:18px;
+  font-size:16px;font-weight:600;cursor:pointer;
+  background:rgba(255,59,48,0.08);color:#ff453a;margin-top:10px;
+  transition:transform 0.12s;
+}
+.btn-danger:active{transform:scale(0.97);}
+.btn-export{
+  padding:9px 16px;background:rgba(10,132,255,0.12);color:#0a84ff;
+  border:1px solid rgba(10,132,255,0.25);border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;
+  transition:transform 0.12s;
+}
+.btn-export:active{transform:scale(0.95);}
 
-  .banner{border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
-  .banner.green{background:#0a2a1a;border:0.5px solid #1a5a30;}
-  .banner.orange{background:#2a1a00;border:0.5px solid #5a3a00;}
-  .banner-dot{width:8px;height:8px;border-radius:50%;background:#30d158;flex-shrink:0;animation:pulse 1.4s infinite;}
-  .banner-dot-o{width:8px;height:8px;border-radius:50%;background:#ff9f0a;flex-shrink:0;}
-  .banner-txt{color:#30d158;font-size:13px;font-weight:500;}
-  .banner-txt-o{color:#ff9f0a;font-size:13px;font-weight:500;}
+/* ── Inputs ── */
+input[type=date],input[type=time],input[type=number]{
+  width:100%;padding:13px 15px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px;color:#fff;font-size:16px;margin-bottom:10px;
+  outline:none;-webkit-appearance:none;appearance:none;
+  transition:border-color 0.2s;
+}
+input:focus{border-color:rgba(48,209,88,0.5);background:rgba(255,255,255,0.08);}
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.inp-row input{margin-bottom:0;}
 
-  .time-row{display:flex;align-items:center;gap:10px;margin-bottom:0;}
-  .time-inp{background:#2c2c2e;border:0.5px solid #3a3a3c;border-radius:12px;color:#fff;font-size:16px;padding:12px 14px;outline:none;flex:1;}
-  .time-inp:focus{border-color:#30d158;}
-  .apply-btn{padding:12px 16px;background:#0a84ff;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;}
-  .hint{color:#8e8e93;font-size:12px;margin-top:8px;}
-  .preview-txt{color:#8e8e93;font-size:13px;margin-top:10px;}
-  .edit-preview{color:#8e8e93;font-size:12px;margin:6px 0 2px;}
+/* ── Toggle ── */
+.tgl-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.tgl{width:50px;height:30px;border-radius:15px;cursor:pointer;position:relative;transition:background 0.25s;flex-shrink:0;}
+.tgl.on{background:linear-gradient(135deg,#30d158,#26b050);}
+.tgl.off{background:rgba(255,255,255,0.15);}
+.tgl-t{width:26px;height:26px;background:#fff;border-radius:50%;position:absolute;top:2px;transition:left 0.25s;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
+.tgl.on .tgl-t{left:22px;}.tgl.off .tgl-t{left:2px;}
+.tgl-lbl{color:rgba(255,255,255,0.6);font-size:14px;font-weight:500;}
 
-  .breakdown{background:#0d1f0d;border:0.5px solid #1a3d1a;border-radius:12px;padding:12px;margin-top:10px;}
-  .brow{display:flex;justify-content:space-between;padding:4px 0;}
-  .brow-lbl{color:#6e8e6e;font-size:13px;}
-  .brow-val{color:#9ed89e;font-size:13px;font-variant-numeric:tabular-nums;}
-  .brow.total .brow-lbl,.brow.total .brow-val{color:#30d158;font-weight:600;}
-  .brow.neg .brow-val{color:#ff6b6b;}
-  .brow.neg .brow-lbl{color:#8e6e6e;}
+/* ── Start time card ── */
+.time-row{display:flex;align-items:center;gap:10px;margin-bottom:0;}
+.time-inp{
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px;color:#fff;font-size:16px;padding:13px 15px;outline:none;flex:1;
+  transition:border-color 0.2s;
+}
+.time-inp:focus{border-color:rgba(48,209,88,0.5);}
+.apply-btn{
+  padding:13px 18px;background:linear-gradient(135deg,#0a84ff,#0066cc);color:#fff;
+  border:none;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;
+  box-shadow:0 3px 14px rgba(10,132,255,0.3);white-space:nowrap;
+}
+.hint{color:rgba(255,255,255,0.3);font-size:12px;margin-top:8px;}
+.preview-txt{color:rgba(255,255,255,0.4);font-size:13px;margin-top:10px;}
+.edit-preview{color:rgba(255,255,255,0.4);font-size:12px;margin:6px 0 2px;}
 
-  .save-flash{color:#30d158;font-size:11px;opacity:0;transition:opacity 0.3s;}
+/* ── Section title ── */
+.sec-title{
+  color:#fff;font-size:22px;font-weight:700;margin-bottom:16px;letter-spacing:-0.5px;
+}
 
-  .month-progress{background:#0d1f2a;border:0.5px solid #1a3a5a;border-radius:14px;padding:13px;margin-bottom:12px;}
-  .mp-row{display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
-  .mp-lbl{color:#5e8ea8;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
-  .mp-val{color:#5ac8fa;font-size:15px;font-weight:500;}
-  .mp-earn{color:#30d158;font-size:15px;font-weight:500;}
+/* ── Month cards ── */
+.month-card{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:22px;padding:18px;margin-bottom:12px;
+  transition:border-color 0.2s;
+}
+.month-card:active{border-color:rgba(255,255,255,0.14);}
+.month-hdr{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.month-name{color:#fff;font-size:17px;font-weight:600;}
+.month-earn{
+  font-size:17px;font-weight:700;
+  background:linear-gradient(135deg,#30d158,#4ade80);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.month-sub{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;}
+.month-sub span{color:rgba(255,255,255,0.4);font-size:12px;}
+.month-days{margin-top:14px;display:none;}
+.month-days.open{display:block;}
 
-  .sess-item{padding:10px 0;border-bottom:0.5px solid #2c2c2e;display:flex;justify-content:space-between;align-items:center;}
-  .sess-item:last-child{border-bottom:none;}
+/* ── Day items ── */
+.day-item{padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.day-item:last-child{border-bottom:none;}
+.day-view{display:flex;justify-content:space-between;align-items:center;}
+.day-edit-panel{display:none;margin-top:12px;background:rgba(0,0,0,0.2);border-radius:14px;padding:14px;border:1px solid rgba(255,255,255,0.07);}
+.day-edit-panel.open{display:block;}
+.day-edit-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.day-edit-row input{margin-bottom:0;}
+.edit-inp{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:11px;color:#fff;font-size:14px;padding:10px 12px;outline:none;width:100%;}
+.edit-inp:focus{border-color:rgba(48,209,88,0.5);}
+.edit-btns{display:flex;gap:8px;margin-top:10px;}
+.save-btn{flex:1;padding:10px;background:linear-gradient(135deg,#30d158,#26b050);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;}
+.cancel-btn{padding:10px 14px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);border:none;border-radius:11px;font-size:14px;font-weight:500;cursor:pointer;}
+.del-btn{padding:10px 14px;background:rgba(255,59,48,0.1);color:#ff453a;border:1px solid rgba(255,59,48,0.25);border-radius:11px;font-size:14px;font-weight:500;cursor:pointer;}
+.edit-btn{background:none;border:none;color:#0a84ff;font-size:12px;cursor:pointer;padding:4px 10px;font-weight:600;}
 
-  .set-group{margin-bottom:20px;}
-  .set-title{color:#8e8e93;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;padding:0 2px;}
-  .set-row{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:#1c1c1e;border-bottom:0.5px solid #2c2c2e;}
-  .set-row:first-of-type{border-radius:12px 12px 0 0;}
-  .set-row:last-of-type{border-radius:0 0 12px 12px;border-bottom:none;}
-  .set-row:only-of-type{border-radius:12px;border-bottom:none;}
-  .set-lbl{color:#fff;font-size:15px;}
-  .set-sub{color:#8e8e93;font-size:12px;margin-top:2px;}
-  .set-inp{background:transparent;border:none;color:#0a84ff;font-size:15px;font-weight:500;text-align:right;width:80px;outline:none;}
-  .set-unit{color:#8e8e93;font-size:13px;margin-left:2px;}
+.s-lbl{color:rgba(255,255,255,0.4);font-size:13px;}
+.s-val{color:#fff;font-size:14px;font-weight:600;}
+.s-earn{color:#30d158;font-size:14px;font-weight:700;}
+
+/* ── Sessions ── */
+.sess-item{padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;}
+.sess-item:last-child{border-bottom:none;}
+
+/* ── Save flash ── */
+.save-flash{color:#30d158;font-size:11px;font-weight:600;opacity:0;transition:opacity 0.3s;}
+
+/* ── Settings ── */
+.set-group{margin-bottom:22px;}
+.set-title{color:rgba(255,255,255,0.35);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;padding:0 4px;}
+.set-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:18px;overflow:hidden;}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.set-row:last-child{border-bottom:none;}
+.set-lbl{color:#fff;font-size:15px;font-weight:500;}
+.set-sub{color:rgba(255,255,255,0.35);font-size:12px;margin-top:2px;}
+.set-inp{background:transparent;border:none;color:#0a84ff;font-size:15px;font-weight:600;text-align:right;width:85px;outline:none;}
+.set-unit{color:rgba(255,255,255,0.35);font-size:13px;margin-left:2px;}
+
+.tip-card{
+  margin-top:20px;padding:16px;
+  background:rgba(10,132,255,0.07);
+  border:1px solid rgba(10,132,255,0.15);
+  border-radius:18px;
+}
+.tip-card .tip-title{color:#5ac8fa;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+.tip-card p{color:rgba(255,255,255,0.45);font-size:13px;line-height:1.6;}
+
+/* ── Dot live indicator ── */
+.dot{width:7px;height:7px;border-radius:50%;background:#30d158;display:inline-block;margin-right:6px;animation:pulse 1.4s infinite;}
 </style>
 </head>
 <body>
 
 <div class="status-bar">
   <span id="clk">9:41</span>
-  <span id="save-dot" class="save-flash">opgeslagen</span>
-  <span>●●●●</span>
+  <span id="save-dot" class="save-flash">opgeslagen ✓</span>
+  <span style="letter-spacing:1px;font-size:10px;">●●●●</span>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab(0)">Timer</div>
-  <div class="tab" onclick="showTab(1)">Invoegen</div>
-  <div class="tab" onclick="showTab(2)">Maanden</div>
-  <div class="tab" onclick="showTab(3)">Instellingen</div>
+  <div class="tab active" onclick="showTab(0)"><span class="tab-icon">⏱</span>Timer</div>
+  <div class="tab" onclick="showTab(1)"><span class="tab-icon">＋</span>Invoegen</div>
+  <div class="tab" onclick="showTab(2)"><span class="tab-icon">≋</span>Maanden</div>
+  <div class="tab" onclick="showTab(3)"><span class="tab-icon">⚙</span>Instellingen</div>
 </div>
 
 <div class="content">
 
-  <!-- TAB 0: TIMER -->
+  <!-- ── TAB 0: TIMER ── -->
   <div class="pg show" id="tab0">
+
     <div id="auto-banner" style="display:none;" class="banner green">
       <div class="banner-dot"></div>
       <div class="banner-txt" id="auto-banner-txt">Automatisch gestart</div>
@@ -166,32 +394,34 @@
       <div class="banner-txt" id="saved-banner-txt">Dag opgeslagen</div>
     </div>
 
-    <div class="card">
+    <!-- Hero timer card -->
+    <div class="hero-card" id="hero-card">
       <div class="lbl" id="timer-lbl">Gewerkte tijd vandaag</div>
       <div class="big" id="timer-display">00:00:00</div>
-      <div style="margin-top:12px;">
-        <div class="earn-lbl" id="earn-lbl">Verdiend (bruto)</div>
-        <div class="earn" id="earn-display">€0,00</div>
-      </div>
+      <div class="earn-lbl" id="earn-lbl">Verdiend (bruto)</div>
+      <div class="earn" id="earn-display">€0,00</div>
+
       <div id="live-breakdown" style="display:none;" class="breakdown">
         <div class="brow"><span class="brow-lbl">Salaris</span><span class="brow-val" id="bd-sal">€0,00</span></div>
         <div class="brow"><span class="brow-lbl" id="bd-vak-lbl">+ Vakantie-uren</span><span class="brow-val" id="bd-vak">€0,00</span></div>
         <div class="brow"><span class="brow-lbl" id="bd-vg-lbl">+ Vakantiegeld</span><span class="brow-val" id="bd-vg">€0,00</span></div>
         <div class="brow neg"><span class="brow-lbl" id="bd-wga-lbl">− WGA</span><span class="brow-val" id="bd-wga">€0,00</span></div>
         <div class="brow neg"><span class="brow-lbl" id="bd-lh-lbl">− Loonheffing</span><span class="brow-val" id="bd-lh">€0,00</span></div>
-        <div class="brow total" style="border-top:0.5px solid #1a3d1a;margin-top:4px;padding-top:6px;"><span class="brow-lbl">Netto</span><span class="brow-val" id="bd-netto">€0,00</span></div>
+        <div class="brow total"><span class="brow-lbl">Netto</span><span class="brow-val" id="bd-netto">€0,00</span></div>
       </div>
     </div>
 
+    <!-- Maand progress -->
     <div id="month-progress" style="display:none;" class="month-progress">
       <div class="mp-lbl">Deze maand</div>
       <div class="mp-row">
         <span class="mp-val" id="mp-hrs">0u</span>
-        <span id="mp-days" style="color:#5e8ea8;font-size:13px;"></span>
+        <span class="mp-days" id="mp-days"></span>
         <span class="mp-earn" id="mp-earn">€0</span>
       </div>
     </div>
 
+    <!-- Starttijd -->
     <div class="card">
       <div class="lbl">Starttijd vandaag</div>
       <div class="time-row">
@@ -215,19 +445,22 @@
       <button class="btn-save-day" onclick="saveDayToMonth()">Dag opslaan in maandoverzicht</button>
     </div>
 
-    <div class="card" style="margin-top:12px;">
+    <!-- Sessies -->
+    <div class="card" style="margin-top:14px;">
       <div class="lbl">Sessies vandaag</div>
-      <div id="today-list"><div style="color:#5c5c60;font-size:14px;text-align:center;padding:6px 0;">Nog geen sessies</div></div>
+      <div id="today-list">
+        <div style="color:rgba(255,255,255,0.2);font-size:14px;text-align:center;padding:10px 0;">Nog geen sessies</div>
+      </div>
     </div>
   </div>
 
-  <!-- TAB 1: INVOEGEN -->
+  <!-- ── TAB 1: INVOEGEN ── -->
   <div class="pg" id="tab1">
     <div class="sec-title">Dag toevoegen</div>
     <div class="card">
       <div class="lbl">Datum</div>
       <input type="date" id="add-date">
-      <div class="lbl" style="margin-top:4px;">Tijden</div>
+      <div class="lbl" style="margin-top:4px;">Start- en eindtijd</div>
       <div class="inp-row">
         <input type="time" id="add-start">
         <input type="time" id="add-end">
@@ -236,75 +469,83 @@
       <button class="btn-blue" onclick="addByTime()">Toevoegen</button>
     </div>
     <div class="card">
-      <div class="lbl">Of op uren</div>
+      <div class="lbl">Of direct op uren</div>
       <input type="number" id="add-hrs" placeholder="Uren (bv. 7.5)" step="0.25" min="0.25" max="24">
       <input type="date" id="add-hrs-date">
       <button class="btn-blue" onclick="addByHours()" style="margin-top:0;">Toevoegen op uren</button>
     </div>
   </div>
 
-  <!-- TAB 2: MAANDEN -->
+  <!-- ── TAB 2: MAANDEN ── -->
   <div class="pg" id="tab2">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="sec-title" style="margin-bottom:0;">Maandoverzicht</div>
-      <button class="btn-export" onclick="exportCSV()">Exporteer CSV</button>
+      <button class="btn-export" onclick="exportCSV()">↓ CSV</button>
     </div>
     <div class="row2">
       <div class="mini"><div class="mini-val" id="gs-days">0</div><div class="mini-lbl">Totaal dagen</div></div>
       <div class="mini"><div class="mini-val" id="gs-hrs">0u</div><div class="mini-lbl">Totaal uren</div></div>
-      <div class="mini"><div class="mini-val" id="gs-bruto" style="color:#30d158;">€0</div><div class="mini-lbl">Bruto (incl. vakantie)</div></div>
+      <div class="mini"><div class="mini-val" id="gs-bruto" style="background:linear-gradient(135deg,#30d158,#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">€0</div><div class="mini-lbl">Bruto totaal</div></div>
       <div class="mini"><div class="mini-val" id="gs-netto" style="color:#ff9f0a;">€0</div><div class="mini-lbl">Netto uitbetaald</div></div>
     </div>
-    <div id="months-list"><div style="color:#5c5c60;font-size:14px;text-align:center;padding:14px 0;">Voeg dagen toe om hier te zien</div></div>
+    <div id="months-list">
+      <div style="color:rgba(255,255,255,0.2);font-size:14px;text-align:center;padding:20px 0;">Voeg dagen toe om hier te zien</div>
+    </div>
   </div>
 
-  <!-- TAB 3: INSTELLINGEN -->
+  <!-- ── TAB 3: INSTELLINGEN ── -->
   <div class="pg" id="tab3">
     <div class="sec-title">Instellingen</div>
 
     <div class="set-group">
       <div class="set-title">Loon</div>
-      <div class="set-row">
-        <div><div class="set-lbl">Uurloon</div><div class="set-sub">Bruto uurloon</div></div>
-        <div style="display:flex;align-items:center;">
-          <span style="color:#8e8e93;font-size:14px;margin-right:3px;">€</span>
-          <input type="number" class="set-inp" id="s-uurloon" step="0.01" min="0">
+      <div class="set-card">
+        <div class="set-row">
+          <div><div class="set-lbl">Uurloon</div><div class="set-sub">Bruto uurloon</div></div>
+          <div style="display:flex;align-items:center;">
+            <span style="color:rgba(255,255,255,0.3);font-size:14px;margin-right:3px;">€</span>
+            <input type="number" class="set-inp" id="s-uurloon" step="0.01" min="0">
+          </div>
         </div>
       </div>
     </div>
 
     <div class="set-group">
       <div class="set-title">Toeslagen</div>
-      <div class="set-row">
-        <div><div class="set-lbl">Vakantie-uren</div><div class="set-sub">% van basisloon</div></div>
-        <div style="display:flex;align-items:center;">
-          <input type="number" class="set-inp" id="s-vak" step="0.001" min="0">
-          <span class="set-unit">%</span>
+      <div class="set-card">
+        <div class="set-row">
+          <div><div class="set-lbl">Vakantie-uren</div><div class="set-sub">% van basisloon</div></div>
+          <div style="display:flex;align-items:center;">
+            <input type="number" class="set-inp" id="s-vak" step="0.001" min="0">
+            <span class="set-unit">%</span>
+          </div>
         </div>
-      </div>
-      <div class="set-row">
-        <div><div class="set-lbl">Vakantiegeld</div><div class="set-sub">% van basisloon</div></div>
-        <div style="display:flex;align-items:center;">
-          <input type="number" class="set-inp" id="s-vg" step="0.001" min="0">
-          <span class="set-unit">%</span>
+        <div class="set-row">
+          <div><div class="set-lbl">Vakantiegeld</div><div class="set-sub">% van basisloon</div></div>
+          <div style="display:flex;align-items:center;">
+            <input type="number" class="set-inp" id="s-vg" step="0.001" min="0">
+            <span class="set-unit">%</span>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="set-group">
       <div class="set-title">Inhoudingen</div>
-      <div class="set-row">
-        <div><div class="set-lbl">WGA</div><div class="set-sub">Werkhervatting Gedeeltelijk Arbeidsgeschikten</div></div>
-        <div style="display:flex;align-items:center;">
-          <input type="number" class="set-inp" id="s-wga" step="0.001" min="0">
-          <span class="set-unit">%</span>
+      <div class="set-card">
+        <div class="set-row">
+          <div><div class="set-lbl">WGA</div><div class="set-sub">Werkhervatting Gedeeltelijk Arbeidsgeschikten</div></div>
+          <div style="display:flex;align-items:center;">
+            <input type="number" class="set-inp" id="s-wga" step="0.001" min="0">
+            <span class="set-unit">%</span>
+          </div>
         </div>
-      </div>
-      <div class="set-row">
-        <div><div class="set-lbl">Loonheffing</div><div class="set-sub">Effectief tarief (incl. kortingen)</div></div>
-        <div style="display:flex;align-items:center;">
-          <input type="number" class="set-inp" id="s-lh" step="0.01" min="0">
-          <span class="set-unit">%</span>
+        <div class="set-row">
+          <div><div class="set-lbl">Loonheffing</div><div class="set-sub">Effectief tarief (incl. kortingen)</div></div>
+          <div style="display:flex;align-items:center;">
+            <input type="number" class="set-inp" id="s-lh" step="0.01" min="0">
+            <span class="set-unit">%</span>
+          </div>
         </div>
       </div>
     </div>
@@ -312,16 +553,16 @@
     <button class="btn-blue" id="save-settings-btn" onclick="saveSettings()">Opslaan</button>
     <button class="btn-danger" onclick="resetSettings()">Herstel standaardwaarden</button>
 
-    <div style="margin-top:20px;padding:14px;background:#1c1c1e;border-radius:14px;border:0.5px solid #2c2c2e;">
-      <div style="color:#8e8e93;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Let op</div>
-      <div style="color:#8e8e93;font-size:13px;line-height:1.6;">De loonheffing is een schatting op basis van je loonstrook. Het effectieve tarief kan veranderen als je inkomen sterk wijzigt. Controleer je loonstrook elk kwartaal.</div>
+    <div class="tip-card">
+      <div class="tip-title">Let op</div>
+      <p>De loonheffing is een schatting op basis van je loonstrook. Het effectieve tarief kan veranderen als je inkomen sterk wijzigt. Controleer elk kwartaal.</p>
     </div>
   </div>
 
 </div>
 
 <script>
-// --- Defaults op basis van loonstrook april 2026 ---
+// --- Defaults (loonstrook april 2026) ---
 const DEFAULTS = {uurloon:15.74, vak:9.625, vg:8.77, wga:0.355, lh:3.11};
 let cfg = {...DEFAULTS};
 
@@ -353,7 +594,14 @@ function euro(v) { return '€'+v.toFixed(2).replace('.',','); }
 function totalElapsed() { return manualOffset + (running ? Math.floor((Date.now()-startTs)/1000) : 0); }
 function vib(pat) { try { navigator.vibrate && navigator.vibrate(pat); } catch(e) {} }
 
-// --- Persisteren ---
+function setHeroState(state) {
+  const c = document.getElementById('hero-card');
+  const t = document.getElementById('timer-display');
+  c.className = 'hero-card' + (state ? ' '+state : '');
+  t.className = 'big' + (state ? ' '+state : '');
+}
+
+// --- Persist ---
 function persistTimer() {
   try {
     if (running && startTs) {
@@ -385,7 +633,6 @@ function saveCfg() {
   try { localStorage.setItem('ut_cfg', JSON.stringify(cfg)); } catch(e) {}
 }
 
-// --- Migreer oude localStorage keys ---
 function migrateOldData() {
   const map = {
     'urentimer_days':'ut_days','urentimer_netto':'ut_netto',
@@ -397,14 +644,13 @@ function migrateOldData() {
   Object.entries(map).forEach(([old, neo]) => {
     const val = localStorage.getItem(old);
     if (val !== null && localStorage.getItem(neo) === null) {
-      localStorage.setItem(neo, val);
-      migrated = true;
+      localStorage.setItem(neo, val); migrated = true;
     }
   });
   if (migrated) Object.keys(map).forEach(k => localStorage.removeItem(k));
 }
 
-// --- Laden ---
+// --- Load ---
 function load() {
   migrateOldData();
   try {
@@ -430,12 +676,12 @@ function load() {
       if (savedSessions) todaySessions = JSON.parse(savedSessions);
 
       if (wasRunning && savedStartTs) {
-        startTs = savedStartTs;
-        running = true;
+        startTs = savedStartTs; running = true;
         interval = setInterval(() => { updateTimer(); persistTimer(); }, 1000);
         document.getElementById('main-btn').textContent = 'Stop';
         document.getElementById('main-btn').className = 'btn-r';
-        document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:500;">Live</span>';
+        document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:600;">Live</span>';
+        setHeroState('running');
         if (autoStartTime) {
           document.getElementById('auto-banner').style.display = 'flex';
           document.getElementById('auto-banner-txt').textContent = 'Loopt sinds ' + autoStartTime;
@@ -446,8 +692,9 @@ function load() {
       } else if (manualOffset > 0) {
         updateTimer();
         document.getElementById('main-btn').textContent = 'Hervatten';
-        if (manualOffset > 60) document.getElementById('save-day-wrap').style.display = 'block';
+        setHeroState('paused');
         document.getElementById('pause-banner').style.display = 'flex';
+        if (manualOffset > 60) document.getElementById('save-day-wrap').style.display = 'block';
       }
       renderTodaySessions();
     }
@@ -494,7 +741,8 @@ function applyStart() {
   document.getElementById('pause-banner').style.display = 'none';
   document.getElementById('main-btn').textContent = 'Stop';
   document.getElementById('main-btn').className = 'btn-r';
-  document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:500;">Live</span>';
+  document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:600;">Live</span>';
+  setHeroState('running');
   document.getElementById('start-hint').textContent = 'Gestart om ' + val;
   todaySessions = [{start:val, startTs:st.getTime(), end:null, secs:0}];
   document.getElementById('save-day-wrap').style.display = 'none';
@@ -504,12 +752,12 @@ function applyStart() {
 
 function toggleTimer() {
   if (!running) {
-    // Start / hervatten
     startTs = Date.now(); running = true;
     interval = setInterval(() => { updateTimer(); persistTimer(); }, 1000);
     document.getElementById('main-btn').textContent = 'Stop';
     document.getElementById('main-btn').className = 'btn-r';
-    document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:500;">Live</span>';
+    document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:600;">Live</span>';
+    setHeroState('running');
     document.getElementById('pause-banner').style.display = 'none';
     document.getElementById('save-day-wrap').style.display = 'none';
     const now = new Date();
@@ -517,7 +765,6 @@ function toggleTimer() {
     todaySessions.push({start:timeStr, startTs:Date.now(), end:null, secs:0});
     persistTimer(); vib(10);
   } else {
-    // Stop / pauze
     const elapsed = Math.floor((Date.now() - startTs) / 1000);
     manualOffset += elapsed;
     clearInterval(interval); running = false;
@@ -531,6 +778,7 @@ function toggleTimer() {
     document.getElementById('main-btn').textContent = 'Hervatten';
     document.getElementById('main-btn').className = 'btn-g';
     document.getElementById('timer-lbl').textContent = 'Gepauzeerd';
+    setHeroState('paused');
     document.getElementById('auto-banner').style.display = 'none';
     document.getElementById('pause-banner').style.display = 'flex';
     if (totalElapsed() > 60) document.getElementById('save-day-wrap').style.display = 'block';
@@ -569,6 +817,7 @@ function resetToday() {
   document.getElementById('main-btn').textContent = 'Start';
   document.getElementById('main-btn').className = 'btn-g';
   document.getElementById('timer-lbl').textContent = 'Gewerkte tijd vandaag';
+  setHeroState(null);
   document.getElementById('auto-banner').style.display = 'none';
   document.getElementById('pause-banner').style.display = 'none';
   document.getElementById('save-day-wrap').style.display = 'none';
@@ -581,7 +830,7 @@ function resetToday() {
 function renderTodaySessions() {
   const el = document.getElementById('today-list');
   if (!todaySessions.length) {
-    el.innerHTML = '<div style="color:#5c5c60;font-size:14px;text-align:center;padding:6px 0;">Nog geen sessies</div>';
+    el.innerHTML = '<div style="color:rgba(255,255,255,0.2);font-size:14px;text-align:center;padding:10px 0;">Nog geen sessies</div>';
     return;
   }
   el.innerHTML = todaySessions.map((s, i) => {
@@ -590,7 +839,7 @@ function renderTodaySessions() {
       ? Math.floor((Date.now() - startTs) / 1000) + (s.secs || 0)
       : (s.secs || 0);
     const l = calcLoon(sessElapsed / 3600);
-    const endLabel = s.end ? s.end : '<span style="color:#30d158;font-size:11px;">● live</span>';
+    const endLabel = s.end ? s.end : '<span style="color:#30d158;font-size:10px;font-weight:700;">● LIVE</span>';
     return `<div class="sess-item">
       <div>
         <div class="s-val">${s.start} – ${endLabel}</div>
@@ -608,13 +857,12 @@ function toggleMode() {
   updateTimer(); renderTodaySessions(); updateMonthProgress(); persist();
 }
 
-// --- Maand-progress op timer tab ---
 function updateMonthProgress() {
   const thisMonth = todayStr().substring(0, 7);
   const days = allDays.filter(d => d.date.startsWith(thisMonth));
   const el = document.getElementById('month-progress');
   if (!days.length) { el.style.display = 'none'; return; }
-  const hrs = days.reduce((a, d) => a + d.hours, 0);
+  const hrs = days.reduce((a, d) => a+d.hours, 0);
   const l = calcLoon(hrs);
   el.style.display = 'block';
   document.getElementById('mp-hrs').textContent = hrs.toFixed(1) + 'u';
@@ -622,7 +870,7 @@ function updateMonthProgress() {
   document.getElementById('mp-earn').textContent = euro(showNetto ? l.netto : l.brutoTotaal);
 }
 
-// --- Maanden tab ---
+// --- Maanden ---
 const MN = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
 function mKey(d) { const [y,m] = d.split('-'); return y+'-'+m; }
 function mLabel(k) { const [y,m] = k.split('-'); return MN[parseInt(m)-1]+' '+y; }
@@ -640,7 +888,7 @@ function renderMonths() {
 
   const el = document.getElementById('months-list');
   if (!keys.length) {
-    el.innerHTML = '<div style="color:#5c5c60;font-size:14px;text-align:center;padding:14px 0;">Voeg dagen toe om hier te zien</div>';
+    el.innerHTML = '<div style="color:rgba(255,255,255,0.2);font-size:14px;text-align:center;padding:20px 0;">Voeg dagen toe om hier te zien</div>';
     return;
   }
 
@@ -660,15 +908,15 @@ function renderMonths() {
       const isEditOpen = openEditIdx === idx;
 
       const editPanel = `<div class="day-edit-panel ${isEditOpen?'open':''}" id="ep${idx}">
-        <div style="color:#8e8e93;font-size:12px;margin-bottom:6px;">Datum</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:12px;margin-bottom:6px;">Datum</div>
         <input type="date" class="edit-inp" id="edate${idx}" value="${d.date}" style="margin-bottom:10px;width:100%;">
         ${d.type==='hours' ? `
-          <div style="color:#8e8e93;font-size:12px;margin-bottom:6px;">Uren</div>
+          <div style="color:rgba(255,255,255,0.4);font-size:12px;margin-bottom:6px;">Uren</div>
           <input type="number" class="edit-inp" id="ehrs${idx}" value="${d.hours.toFixed(2)}" step="0.25" min="0.25" max="24" style="width:100%;">
         ` : `
           <div class="day-edit-row">
-            <div><div style="color:#8e8e93;font-size:12px;margin-bottom:4px;">Start</div><input type="time" class="edit-inp" id="estart${idx}" value="${d.startTime||''}"></div>
-            <div><div style="color:#8e8e93;font-size:12px;margin-bottom:4px;">Eind</div><input type="time" class="edit-inp" id="eend${idx}" value="${d.endTime||''}"></div>
+            <div><div style="color:rgba(255,255,255,0.4);font-size:12px;margin-bottom:4px;">Start</div><input type="time" class="edit-inp" id="estart${idx}" value="${d.startTime||''}"></div>
+            <div><div style="color:rgba(255,255,255,0.4);font-size:12px;margin-bottom:4px;">Eind</div><input type="time" class="edit-inp" id="eend${idx}" value="${d.endTime||''}"></div>
           </div>
           <div class="edit-preview" id="eprev${idx}">${d.label}</div>
         `}
@@ -685,10 +933,10 @@ function renderMonths() {
             <div class="s-val">${day}-${mo}-${y}</div>
             <div class="s-lbl">${d.label} · ${d.hours.toFixed(2)}u</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;">
             <div style="text-align:right;">
               <div class="s-earn">${euro(dl.brutoTotaal)}</div>
-              <div style="color:#ff9f0a;font-size:12px;">${euro(dl.netto)} netto</div>
+              <div style="color:#ff9f0a;font-size:12px;font-weight:500;">${euro(dl.netto)} netto</div>
             </div>
             <button class="edit-btn" onclick="doToggleEdit(${idx})">bewerk</button>
           </div>
@@ -699,16 +947,18 @@ function renderMonths() {
 
     return `<div class="month-card">
       <div class="month-hdr" onclick="toggleMonth('${k}')">
-        <span class="month-name">${mLabel(k)}</span>
-        <div style="text-align:right;">
-          <div class="month-earn">${euro(kl.brutoTotaal)}</div>
-          <div style="color:#ff9f0a;font-size:13px;">${euro(kl.netto)} netto</div>
+        <div>
+          <span class="month-name">${mLabel(k)}</span>
+          <div class="month-sub">
+            <span>${days.length} dag${days.length!==1?'en':''}</span>
+            <span>${hrs.toFixed(1)} uur</span>
+            <span style="color:rgba(255,255,255,0.25);">lh −${euro(kl.lh)} · wga −${euro(kl.wga)}</span>
+          </div>
         </div>
-      </div>
-      <div class="month-sub">
-        <span>${days.length} dag${days.length!==1?'en':''}</span>
-        <span>${hrs.toFixed(1)} uur</span>
-        <span style="color:#6e8e6e;font-size:12px;">vak. ${euro(kl.vakUren+kl.vakGeld)} · lh −${euro(kl.lh)} · wga −${euro(kl.wga)}</span>
+        <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+          <div class="month-earn">${euro(kl.brutoTotaal)}</div>
+          <div style="color:#ff9f0a;font-size:13px;font-weight:500;">${euro(kl.netto)} netto</div>
+        </div>
       </div>
       <div class="month-days ${isOpen?'open':''}" id="m-${k}">${daysHtml}</div>
     </div>`;
@@ -840,7 +1090,7 @@ function saveSettings() {
   cfg = {uurloon:ul, vak, vg, wga, lh};
   saveCfg(); updateTimer(); updateMonthProgress(); vib(10);
   const btn = document.getElementById('save-settings-btn');
-  btn.textContent = 'Opgeslagen ✓'; btn.style.background = '#30d158';
+  btn.textContent = 'Opgeslagen ✓'; btn.style.background = 'linear-gradient(135deg,#30d158,#26b050)';
   setTimeout(() => { btn.textContent = 'Opslaan'; btn.style.background = ''; }, 1500);
 }
 
@@ -864,7 +1114,7 @@ function updateClock() {
 }
 updateClock(); setInterval(updateClock, 15000);
 
-// --- Visibility handling ---
+// --- Visibility ---
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     if (running && startTs) {
@@ -889,7 +1139,8 @@ window.addEventListener('pageshow', () => {
       interval = setInterval(() => { updateTimer(); persistTimer(); }, 1000);
       document.getElementById('main-btn').textContent = 'Stop';
       document.getElementById('main-btn').className = 'btn-r';
-      document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:500;">Live</span>';
+      document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:600;">Live</span>';
+      setHeroState('running');
       autoStartTime = localStorage.getItem('ut_autoStart') || null;
       if (autoStartTime) {
         document.getElementById('auto-banner').style.display = 'flex';
