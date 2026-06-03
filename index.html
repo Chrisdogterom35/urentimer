@@ -8,6 +8,61 @@
 <meta name="apple-mobile-web-app-title" content="Urentimer">
 <title>Urentimer</title>
 <style>
+/* ── Account picker overlay ── */
+#account-picker{
+  position:fixed;inset:0;z-index:999;
+  background:#08081a;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 24px env(safe-area-inset-bottom,32px);
+}
+.ap-logo{font-size:48px;margin-bottom:10px;}
+.ap-title{color:#fff;font-size:28px;font-weight:700;letter-spacing:-0.8px;margin-bottom:6px;text-align:center;}
+.ap-sub{color:rgba(255,255,255,0.38);font-size:15px;margin-bottom:40px;text-align:center;}
+.ap-cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:340px;}
+.ap-card{
+  display:flex;align-items:center;gap:18px;
+  padding:22px 20px;border-radius:22px;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.05);
+  transition:transform 0.15s,border-color 0.2s,box-shadow 0.2s;
+  -webkit-user-select:none;user-select:none;
+}
+.ap-card:active{transform:scale(0.97);}
+.ap-card.personal{
+  border-color:rgba(48,209,88,0.3);
+  background:linear-gradient(135deg,rgba(48,209,88,0.08) 0%,rgba(10,132,255,0.04) 100%);
+}
+.ap-card.personal:hover{
+  border-color:rgba(48,209,88,0.5);
+  box-shadow:0 0 30px rgba(48,209,88,0.1);
+}
+.ap-card.professional{
+  border-color:rgba(10,132,255,0.3);
+  background:linear-gradient(135deg,rgba(10,132,255,0.08) 0%,rgba(94,200,250,0.04) 100%);
+}
+.ap-card.professional:hover{
+  border-color:rgba(10,132,255,0.5);
+  box-shadow:0 0 30px rgba(10,132,255,0.1);
+}
+.ap-icon{font-size:36px;flex-shrink:0;}
+.ap-info{flex:1;}
+.ap-name{color:#fff;font-size:19px;font-weight:700;margin-bottom:3px;}
+.ap-desc{color:rgba(255,255,255,0.38);font-size:13px;line-height:1.4;}
+.ap-arrow{color:rgba(255,255,255,0.25);font-size:20px;flex-shrink:0;}
+
+/* ── Active account badge in status bar ── */
+#account-badge{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:8px;
+  cursor:pointer;
+  transition:opacity 0.15s;
+}
+#account-badge:active{opacity:0.7;}
+#account-badge.personal{background:rgba(48,209,88,0.12);color:#30d158;border:1px solid rgba(48,209,88,0.2);}
+#account-badge.professional{background:rgba(10,132,255,0.12);color:#5ac8fa;border:1px solid rgba(10,132,255,0.2);}
+</style>
+<style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
 html{background:#08081a;}
@@ -363,10 +418,38 @@ input:focus{border-color:rgba(48,209,88,0.5);background:rgba(255,255,255,0.08);}
 </head>
 <body>
 
+<!-- Account picker overlay -->
+<div id="account-picker">
+  <div class="ap-logo">⏱</div>
+  <div class="ap-title">Urentimer</div>
+  <div class="ap-sub">Kies een account om door te gaan</div>
+  <div class="ap-cards">
+    <div class="ap-card personal" onclick="selectAccount('personal')">
+      <div class="ap-icon">🔒</div>
+      <div class="ap-info">
+        <div class="ap-name">Persoonlijk</div>
+        <div class="ap-desc">Privé uren, inkomsten &amp; investeren</div>
+      </div>
+      <div class="ap-arrow">›</div>
+    </div>
+    <div class="ap-card professional" onclick="selectAccount('professional')">
+      <div class="ap-icon">💼</div>
+      <div class="ap-info">
+        <div class="ap-name">Professioneel</div>
+        <div class="ap-desc">Werk, zakelijke uren &amp; administratie</div>
+      </div>
+      <div class="ap-arrow">›</div>
+    </div>
+  </div>
+</div>
+
 <div class="status-bar">
   <span id="clk">9:41</span>
   <span id="save-dot" class="save-flash">opgeslagen ✓</span>
-  <span style="letter-spacing:1px;font-size:10px;">●●●●</span>
+  <div id="account-badge" class="personal" onclick="switchAccount()" title="Account wisselen">
+    <span id="account-badge-icon">🔒</span>
+    <span id="account-badge-name">Persoonlijk</span>
+  </div>
 </div>
 
 <div class="tabs">
@@ -559,6 +642,62 @@ input:focus{border-color:rgba(48,209,88,0.5);background:rgba(255,255,255,0.08);}
 </div>
 
 <script>
+// ── Account management ──
+const ACCOUNTS = {
+  personal:      { name:'Persoonlijk', icon:'🔒', badge:'personal' },
+  professional:  { name:'Professioneel', icon:'💼', badge:'professional' }
+};
+let activeAccount = null;  // set by selectAccount()
+
+function lsKey(k) { return activeAccount + '_' + k; }
+
+function selectAccount(id) {
+  activeAccount = id;
+  // Persist last choice so next open can pre-highlight, but still ask
+  try { sessionStorage.setItem('ut_account', id); } catch(e) {}
+  // Hide picker
+  document.getElementById('account-picker').style.display = 'none';
+  // Update badge
+  const info = ACCOUNTS[id];
+  const badge = document.getElementById('account-badge');
+  badge.className = 'personal' === id ? 'personal' : 'professional';
+  document.getElementById('account-badge-icon').textContent = info.icon;
+  document.getElementById('account-badge-name').textContent = info.name;
+  // Load data for this account
+  load();
+}
+
+function switchAccount() {
+  if (!confirm('Van account wisselen? Lopende timer wordt gepauzeerd.')) return;
+  // Pause timer if running
+  if (running) { toggleTimer(); }
+  // Reset in-memory state
+  running=false; startTs=null; manualOffset=0; clearInterval(interval); interval=null;
+  todaySessions=[]; autoStartTime=null; openEditIdx=null;
+  allDays=[]; cfg={...DEFAULTS};
+  // Reset UI to idle
+  document.getElementById('timer-display').textContent = '00:00:00';
+  document.getElementById('earn-display').textContent = '€0,00';
+  document.getElementById('earn-lbl').textContent = 'Verdiend (bruto)';
+  document.getElementById('live-breakdown').style.display = 'none';
+  document.getElementById('main-btn').textContent = 'Start';
+  document.getElementById('main-btn').className = 'btn-g';
+  document.getElementById('timer-lbl').textContent = 'Gewerkte tijd vandaag';
+  setHeroState(null);
+  document.getElementById('auto-banner').style.display = 'none';
+  document.getElementById('pause-banner').style.display = 'none';
+  document.getElementById('save-day-wrap').style.display = 'none';
+  document.getElementById('saved-banner').style.display = 'none';
+  document.getElementById('start-inp').value = '';
+  document.getElementById('start-hint').textContent = 'Vul in hoe laat je begon';
+  document.getElementById('month-progress').style.display = 'none';
+  document.getElementById('months-list').innerHTML = '';
+  // Show picker again
+  activeAccount = null;
+  document.getElementById('account-picker').style.display = 'flex';
+  showTab(0);
+}
+
 // --- Defaults (loonstrook april 2026) ---
 const DEFAULTS = {uurloon:15.74, vak:9.625, vg:8.77, wga:0.355};
 let cfg = {...DEFAULTS};
@@ -636,23 +775,23 @@ function setHeroState(state) {
 function persistTimer() {
   try {
     if (running && startTs) {
-      localStorage.setItem('ut_running','1');
-      localStorage.setItem('ut_startTs', String(startTs));
+      localStorage.setItem(lsKey('ut_running'),'1');
+      localStorage.setItem(lsKey('ut_startTs'), String(startTs));
     } else {
-      localStorage.removeItem('ut_running');
-      localStorage.removeItem('ut_startTs');
+      localStorage.removeItem(lsKey('ut_running'));
+      localStorage.removeItem(lsKey('ut_startTs'));
     }
-    localStorage.setItem('ut_offset', String(manualOffset));
-    localStorage.setItem('ut_autoStart', autoStartTime||'');
-    localStorage.setItem('ut_sessions', JSON.stringify(todaySessions));
-    localStorage.setItem('ut_date', todayStr());
+    localStorage.setItem(lsKey('ut_offset'), String(manualOffset));
+    localStorage.setItem(lsKey('ut_autoStart'), autoStartTime||'');
+    localStorage.setItem(lsKey('ut_sessions'), JSON.stringify(todaySessions));
+    localStorage.setItem(lsKey('ut_date'), todayStr());
   } catch(e) {}
 }
 
 function persist() {
   try {
-    localStorage.setItem('ut_days', JSON.stringify(allDays));
-    localStorage.setItem('ut_netto', showNetto?'1':'0');
+    localStorage.setItem(lsKey('ut_days'), JSON.stringify(allDays));
+    localStorage.setItem(lsKey('ut_netto'), showNetto?'1':'0');
     const dot = document.getElementById('save-dot');
     dot.style.opacity = '1';
     clearTimeout(saveTmr);
@@ -661,49 +800,69 @@ function persist() {
 }
 
 function saveCfg() {
-  try { localStorage.setItem('ut_cfg', JSON.stringify(cfg)); } catch(e) {}
+  try { localStorage.setItem(lsKey('ut_cfg'), JSON.stringify(cfg)); } catch(e) {}
 }
 
 function migrateOldData() {
+  // Migrate legacy keys (no account prefix) into the personal account namespace
   const map = {
     'urentimer_days':'ut_days','urentimer_netto':'ut_netto',
     'urentimer_running':'ut_running','urentimer_startTs':'ut_startTs',
     'urentimer_offset':'ut_offset','urentimer_autoStart':'ut_autoStart',
     'urentimer_sessions':'ut_sessions','urentimer_timerDate':'ut_date'
   };
+  const plain = {
+    'ut_days':1,'ut_netto':1,'ut_running':1,'ut_startTs':1,
+    'ut_offset':1,'ut_autoStart':1,'ut_sessions':1,'ut_date':1,'ut_cfg':1
+  };
   let migrated = false;
+  // Very old keys
   Object.entries(map).forEach(([old, neo]) => {
     const val = localStorage.getItem(old);
-    if (val !== null && localStorage.getItem(neo) === null) {
-      localStorage.setItem(neo, val); migrated = true;
+    if (val !== null && localStorage.getItem(lsKey(neo)) === null) {
+      localStorage.setItem(lsKey(neo), val); migrated = true;
     }
   });
   if (migrated) Object.keys(map).forEach(k => localStorage.removeItem(k));
+  // Plain keys (before account namespacing) → personal
+  if (activeAccount === 'personal') {
+    Object.keys(plain).forEach(k => {
+      const val = localStorage.getItem(k);
+      if (val !== null && localStorage.getItem(lsKey(k)) === null) {
+        localStorage.setItem(lsKey(k), val);
+        localStorage.removeItem(k);
+      }
+    });
+  }
 }
 
 // --- Load ---
 function load() {
   migrateOldData();
   try {
-    const sc = localStorage.getItem('ut_cfg');
+    const sc = localStorage.getItem(lsKey('ut_cfg'));
     if (sc) cfg = {...DEFAULTS, ...JSON.parse(sc)};
 
-    const d = localStorage.getItem('ut_days');
+    const d = localStorage.getItem(lsKey('ut_days'));
     if (d) allDays = JSON.parse(d);
 
-    if (localStorage.getItem('ut_netto') === '0') {
+    if (localStorage.getItem(lsKey('ut_netto')) === '0') {
       showNetto = false;
       document.getElementById('mode-tgl').className = 'tgl on';
       document.getElementById('mode-lbl').textContent = 'Bruto weergave';
+    } else {
+      showNetto = true;
+      document.getElementById('mode-tgl').className = 'tgl off';
+      document.getElementById('mode-lbl').textContent = 'Netto weergave';
     }
 
-    const savedDate = localStorage.getItem('ut_date');
+    const savedDate = localStorage.getItem(lsKey('ut_date'));
     if (savedDate === todayStr()) {
-      const wasRunning = localStorage.getItem('ut_running') === '1';
-      manualOffset = parseFloat(localStorage.getItem('ut_offset')||'0');
-      const savedStartTs = parseInt(localStorage.getItem('ut_startTs')||'0');
-      autoStartTime = localStorage.getItem('ut_autoStart') || null;
-      const savedSessions = localStorage.getItem('ut_sessions');
+      const wasRunning = localStorage.getItem(lsKey('ut_running')) === '1';
+      manualOffset = parseFloat(localStorage.getItem(lsKey('ut_offset'))||'0');
+      const savedStartTs = parseInt(localStorage.getItem(lsKey('ut_startTs'))||'0');
+      autoStartTime = localStorage.getItem(lsKey('ut_autoStart')) || null;
+      const savedSessions = localStorage.getItem(lsKey('ut_sessions'));
       if (savedSessions) todaySessions = JSON.parse(savedSessions);
 
       if (wasRunning && savedStartTs) {
@@ -841,7 +1000,7 @@ function resetToday() {
   if (totalElapsed() > 60 && !confirm('Timer resetten? De huidige tijd gaat verloren.')) return;
   if (running) { clearInterval(interval); running = false; }
   manualOffset = 0; startTs = null; todaySessions = []; autoStartTime = null;
-  try { ['ut_running','ut_startTs','ut_offset','ut_autoStart','ut_sessions','ut_date'].forEach(k => localStorage.removeItem(k)); } catch(e) {}
+  try { ['ut_running','ut_startTs','ut_offset','ut_autoStart','ut_sessions','ut_date'].forEach(k => localStorage.removeItem(lsKey(k))); } catch(e) {}
   document.getElementById('timer-display').textContent = '00:00:00';
   document.getElementById('earn-display').textContent = '€0,00';
   document.getElementById('earn-lbl').textContent = 'Verdiend (bruto)';
@@ -1193,11 +1352,12 @@ document.addEventListener('visibilitychange', () => {
 });
 
 window.addEventListener('pageshow', () => {
-  const wasRunning = localStorage.getItem('ut_running') === '1';
-  const savedDate = localStorage.getItem('ut_date');
+  if (!activeAccount) return;
+  const wasRunning = localStorage.getItem(lsKey('ut_running')) === '1';
+  const savedDate = localStorage.getItem(lsKey('ut_date'));
   if (wasRunning && savedDate === todayStr() && !running) {
-    const savedStartTs = parseInt(localStorage.getItem('ut_startTs')||'0');
-    const savedOffset = parseFloat(localStorage.getItem('ut_offset')||'0');
+    const savedStartTs = parseInt(localStorage.getItem(lsKey('ut_startTs'))||'0');
+    const savedOffset = parseFloat(localStorage.getItem(lsKey('ut_offset'))||'0');
     if (savedStartTs) {
       startTs = savedStartTs; manualOffset = savedOffset; running = true;
       clearInterval(interval);
@@ -1206,7 +1366,7 @@ window.addEventListener('pageshow', () => {
       document.getElementById('main-btn').className = 'btn-r';
       document.getElementById('timer-lbl').innerHTML = '<span class="dot"></span><span style="color:#30d158;font-size:13px;font-weight:600;">Live</span>';
       setHeroState('running');
-      autoStartTime = localStorage.getItem('ut_autoStart') || null;
+      autoStartTime = localStorage.getItem(lsKey('ut_autoStart')) || null;
       if (autoStartTime) {
         document.getElementById('auto-banner').style.display = 'flex';
         document.getElementById('auto-banner-txt').textContent = 'Loopt sinds ' + autoStartTime;
@@ -1220,7 +1380,8 @@ window.addEventListener('pageshow', () => {
 const td = todayStr();
 document.getElementById('add-date').value = td;
 document.getElementById('add-hrs-date').value = td;
-load();
+// Show account picker on every load — don't auto-select
+document.getElementById('account-picker').style.display = 'flex';
 </script>
 </body>
 </html>
