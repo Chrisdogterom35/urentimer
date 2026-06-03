@@ -732,6 +732,7 @@ function load() {
   } catch(e) {}
   updateMonthProgress();
   updateSettingsInputs();
+  loadFromDb();
 }
 
 // --- Timer ---
@@ -826,8 +827,10 @@ function saveDayToMonth() {
   const endTime = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
   const label = autoStartTime ? autoStartTime + ' – ' + endTime : fmt(t) + ' gewerkt';
   allDays = allDays.filter(x => x.date !== d);
-  allDays.push({date:d, startTime:autoStartTime||null, endTime, hours:t/3600, label, type:autoStartTime?'time':'hours'});
+  const savedEntry = {date:d, startTime:autoStartTime||null, endTime, hours:t/3600, label, type:autoStartTime?'time':'hours'};
+  allDays.push(savedEntry);
   persist(); updateMonthProgress();
+  syncDay(savedEntry);
   document.getElementById('save-day-wrap').style.display = 'none';
   const l = calcLoon(t / 3600);
   document.getElementById('saved-banner-txt').textContent = 'Opgeslagen: ' + label + ' · ' + euro(l.netto) + ' netto';
@@ -1060,13 +1063,17 @@ function doSave(idx) {
       if (mins > 0) { d.hours = mins/60; d.startTime = s; d.endTime = e; d.label = s+' – '+e; }
     }
   }
+  const savedDay = allDays[idx];
   openEditIdx = null; persist(); renderMonths();
+  syncDay(savedDay);
 }
 
 function doDelete(idx) {
   if (!confirm('Dag verwijderen?')) return;
+  const deletedDate = allDays[idx]?.date;
   allDays.splice(idx, 1);
   openEditIdx = null; persist(); renderMonths(); updateMonthProgress();
+  if (deletedDate) removeDay(deletedDate);
 }
 
 function updatePreview(idx) {
@@ -1094,8 +1101,10 @@ function addByTime() {
   const mins = (eh*60+em) - (sh*60+sm);
   if (mins <= 0) { alert('Eindtijd moet na starttijd liggen.'); return; }
   allDays = allDays.filter(x => x.date !== date);
-  allDays.push({date, startTime:s, endTime:e, hours:mins/60, label:s+' – '+e, type:'time'});
+  const entryT = {date, startTime:s, endTime:e, hours:mins/60, label:s+' – '+e, type:'time'};
+  allDays.push(entryT);
   persist(); updateMonthProgress(); showTab(2);
+  syncDay(entryT);
 }
 
 function addByHours() {
@@ -1103,8 +1112,10 @@ function addByHours() {
   const d = document.getElementById('add-hrs-date').value;
   if (!d || isNaN(h) || h <= 0) { alert('Vul uren en datum in.'); return; }
   allDays = allDays.filter(x => x.date !== d);
-  allDays.push({date:d, hours:h, label:h.toFixed(2)+' uur', type:'hours'});
+  const entryH = {date:d, hours:h, label:h.toFixed(2)+' uur', type:'hours'};
+  allDays.push(entryH);
   persist(); updateMonthProgress(); showTab(2);
+  syncDay(entryH);
 }
 
 document.getElementById('add-start').addEventListener('input', updateAddPreview);
@@ -1154,6 +1165,7 @@ function saveSettings() {
   if ([ul,vak,vg,wga].some(v => isNaN(v) || v < 0)) { alert('Ongeldige waarden.'); return; }
   cfg = {uurloon:ul, vak, vg, wga};
   saveCfg(); updateTimer(); updateMonthProgress(); vib(10);
+  syncConfig(cfg);
   const btn = document.getElementById('save-settings-btn');
   btn.textContent = 'Opgeslagen ✓'; btn.style.background = 'linear-gradient(135deg,#30d158,#26b050)';
   setTimeout(() => { btn.textContent = 'Opslaan'; btn.style.background = ''; }, 1500);
@@ -1215,6 +1227,59 @@ window.addEventListener('pageshow', () => {
     }
   }
 });
+
+// --- Cloud sync (Turso) ---
+async function loadFromDb() {
+  try {
+    const [dRes, cRes] = await Promise.all([
+      fetch('/api/days').then(r => r.ok ? r.json() : null),
+      fetch('/api/config').then(r => r.ok ? r.json() : null),
+    ]);
+    let changed = false;
+    if (Array.isArray(dRes) && dRes.length > 0) {
+      allDays = dRes;
+      try { localStorage.setItem('ut_days', JSON.stringify(allDays)); } catch(e) {}
+      changed = true;
+    }
+    if (cRes && typeof cRes === 'object') {
+      cfg = {...DEFAULTS, ...cRes};
+      try { localStorage.setItem('ut_cfg', JSON.stringify(cfg)); } catch(e) {}
+      changed = true;
+    }
+    if (changed) {
+      updateMonthProgress();
+      updateSettingsInputs();
+      updateTimer();
+      if (document.getElementById('tab2').classList.contains('show') && openEditIdx === null) renderMonths();
+    }
+  } catch(e) {}
+}
+
+async function syncDay(day) {
+  try {
+    await fetch('/api/days', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(day),
+    });
+  } catch(e) {}
+}
+
+async function removeDay(date) {
+  try {
+    await fetch('/api/days?date=' + encodeURIComponent(date), {method: 'DELETE'});
+  } catch(e) {}
+}
+
+async function syncConfig(c) {
+  try {
+    await fetch('/api/config', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(c),
+    });
+  } catch(e) {}
+}
 
 // --- Init ---
 const td = todayStr();
