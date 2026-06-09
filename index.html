@@ -8,10 +8,14 @@
 <meta name="apple-mobile-web-app-title" content="Urentimer">
 <meta name="theme-color" content="#06060c">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Urentimer">
 <link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
 <title>Urentimer</title>
 <style>
 :root{
@@ -1513,6 +1517,12 @@ const td = todayStr();
 document.getElementById('add-date').value = td;
 document.getElementById('add-hrs-date').value = td;
 load();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
